@@ -67,6 +67,18 @@
       --timer-track: rgba(255, 255, 255, 0.1);
       --pattern-opacity: 0.035;
       --theme-meta: #07070B;
+
+      /* Intro Stage Background (Dark Wide/Default) */
+      --bg-intro-img: url('./assets/bg-intro-dark-wide.webp');
+      --bg-intro-fallback: radial-gradient(ellipse at 50% 25%, rgba(212, 175, 55, 0.16) 0%, transparent 70%), linear-gradient(180deg, #07070B 0%, #0D0F1B 50%, #07070B 100%);
+      --bg-intro-overlay: radial-gradient(ellipse at 50% 40%, rgba(7, 7, 11, 0.58) 0%, rgba(7, 7, 11, 0.82) 65%, rgba(3, 3, 6, 0.95) 100%), linear-gradient(180deg, rgba(7, 7, 11, 0.72) 0%, rgba(7, 7, 11, 0.42) 35%, rgba(7, 7, 11, 0.88) 100%);
+      --bg-intro-vignette: radial-gradient(circle at center, transparent 45%, rgba(0, 0, 0, 0.65) 100%);
+    }
+
+    @media (orientation: portrait), (max-aspect-ratio: 1/1) {
+      :root, [data-mode="dark"] {
+        --bg-intro-img: url('./assets/bg-intro-dark-tall.webp');
+      }
     }
 
     [data-mode="light"] {
@@ -80,6 +92,18 @@
       --timer-track: rgba(0, 0, 0, 0.08);
       --pattern-opacity: 0.045;
       --theme-meta: #FBF7EC;
+
+      /* Intro Stage Background (Light Wide/Default) */
+      --bg-intro-img: url('./assets/bg-intro-light-wide.webp');
+      --bg-intro-fallback: radial-gradient(ellipse at 50% 25%, rgba(184, 134, 11, 0.16) 0%, transparent 70%), linear-gradient(180deg, #FBF7EC 0%, #F3EBD7 50%, #EFE4CC 100%);
+      --bg-intro-overlay: radial-gradient(ellipse at 50% 40%, rgba(251, 247, 236, 0.68) 0%, rgba(246, 238, 219, 0.86) 65%, rgba(235, 222, 195, 0.95) 100%), linear-gradient(180deg, rgba(251, 247, 236, 0.78) 0%, rgba(251, 247, 236, 0.48) 35%, rgba(241, 232, 211, 0.92) 100%);
+      --bg-intro-vignette: radial-gradient(circle at center, transparent 50%, rgba(120, 95, 45, 0.28) 100%);
+    }
+
+    @media (orientation: portrait), (max-aspect-ratio: 1/1) {
+      [data-mode="light"] {
+        --bg-intro-img: url('./assets/bg-intro-light-tall.webp');
+      }
     }
 
     [data-accent="gold"] {
@@ -302,6 +326,41 @@
       animation: flamePulse 1s infinite ease-in-out;
     }
 
+    /* Intro Stage Luxury Background */
+    .intro-stage-container {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+      background-image: 
+        var(--bg-intro-vignette),
+        var(--bg-intro-overlay),
+        var(--bg-intro-img),
+        var(--bg-intro-fallback);
+      background-size: cover, cover, cover, cover;
+      background-position: center center, center center, center center, center center;
+      background-repeat: no-repeat;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    @keyframes stageLightPulse {
+      0%, 100% { opacity: 0.96; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.015); }
+    }
+
+    .intro-stage-animated {
+      animation: stageLightPulse 14s ease-in-out infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .intro-stage-animated {
+        animation: none !important;
+      }
+    }
+
     /* Modals */
     .modal-overlay {
       position: fixed;
@@ -390,7 +449,7 @@
       <span id="pwaOfflineBadge" style="display:none; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:700; background:rgba(16,185,129,0.15); color:#34D399; border:1px solid rgba(16,185,129,0.3);">
         ✓ تعمل بدون إنترنت
       </span>
-      <span>150 سؤالاً موثقاً</span>
+      <span>400+ سؤال موثق</span>
     </div>
   </footer>
 
@@ -580,7 +639,8 @@
 
     const ALL_CATEGORIES = [
       'تاريخ', 'جغرافيا', 'علوم', 'ثقافة إسلامية', 'أدب وشعر عربي', 
-      'فنون وسينما', 'تقنية', 'لغة عربية', 'اقتصاد ومال', 'ألغاز ومنطق'
+      'فنون وسينما', 'تقنية', 'لغة عربية', 'اقتصاد ومال', 'ألغاز ومنطق',
+      'الرياضة', 'الرياضيات', 'قواعد الإنجليزية'
     ];
 
     // ==========================================
@@ -1089,7 +1149,8 @@
     // --- الشاشة الافتتاحية ---
     function renderSplash() {
       appEl.innerHTML = `
-        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px 0;">
+        <div class="intro-stage-container intro-stage-animated" aria-hidden="true"></div>
+        <div style="position:relative; z-index:10; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px 0;">
           <!-- Top Row with Theme Switcher & PWA Install Button -->
           <div style="display:flex; justify-content:space-between; align-items:center; width:100%; max-width:600px; margin-bottom:20px;">
             ${renderThemeSwitcher()}
@@ -1209,7 +1270,7 @@
             <div style="margin-bottom:28px;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <label style="font-size:13px; font-weight:700; color:#E2E8F0;">
-                  اختيار التصنيفات (${state.selectedCategories.length} من 10 مختارة - الأدنى 3):
+                  اختيار التصنيفات (${state.selectedCategories.length} من ${ALL_CATEGORIES.length} مختارة - الأدنى 3):
                 </label>
                 <div style="display:flex; gap:12px; font-size:12px;">
                   <span style="color:var(--accent-light); cursor:pointer;" onclick="selectRandomCat();">عشوائي (5)</span>

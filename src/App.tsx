@@ -15,6 +15,7 @@ import {
 } from './data/questions';
 import { sounds } from './utils/audio';
 import { triggerConfetti } from './utils/confetti';
+import { IntroStageBackground } from './components/IntroStageBackground';
 
 // ============================================================================
 // ضبط رابط المشاركة العام للعبة (SHARE_URL):
@@ -47,6 +48,8 @@ export interface Player {
   skips: number;      // used skips count (max 2)
   correctCount: number;
   correctByType: Record<QuestionType, number>;
+  correctByCategory?: Record<string, number>;
+  totalByCategory?: Record<string, number>;
   lives: number;      // in solo mode: starts with 5
 }
 
@@ -98,6 +101,32 @@ const CATEGORY_ICON_MAP: Record<string, React.ReactNode> = {
   'لغة عربية': <BookOpen className="w-5 h-5 text-teal-400" />,
   'اقتصاد ومال': <Coins className="w-5 h-5 text-amber-500" />,
   'ألغاز ومنطق': <Brain className="w-5 h-5 text-violet-400" />,
+  'الرياضة': (
+    <svg className="w-5 h-5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+      <path d="M4 22h16" />
+      <path d="M10 14.66V17c0 .55-.45 1-1 1H8c-.55 0-1 .45-1 1v1h10v-1c0-.55-.45-1-1-1h-1c-.55 0-1-.45-1-1v-2.34" />
+      <path d="M6 2h12v7a6 6 0 0 1-12 0V2Z" />
+    </svg>
+  ),
+  'الرياضيات': (
+    <svg className="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 14h2.5l2.5 6 3.5-14h4" />
+      <path d="M14 7h7" />
+      <path d="M16 7v8" />
+      <path d="M19.5 7c0 4 .5 7 1.5 8" />
+    </svg>
+  ),
+  'قواعد الإنجليزية': (
+    <svg className="w-5 h-5 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 19L8.5 5l5.5 14" />
+      <path d="M5.5 14h6" />
+      <path d="M21 13.5v5.5" />
+      <circle cx="18" cy="16" r="3" />
+      <path d="M21 16c-.5-.8-1.5-1.2-2.5-1.2" />
+    </svg>
+  ),
 };
 
 const MODE_ICON_MAP: Record<QuestionType, React.ReactNode> = {
@@ -125,6 +154,49 @@ function getFirstLetterData(answer: string): { letter: string; length: number; m
   const blanksCount = Math.max(1, totalLetters - 1);
   const masked = `${firstLetter} ` + Array(blanksCount).fill('_').join(' ');
   return { letter: firstLetter, length: totalLetters, masked };
+}
+
+function getTextDir(text?: string): 'ltr' | 'rtl' | 'auto' {
+  if (!text) return 'auto';
+  const hasArabic = /[\u0600-\u06FF]/.test(text);
+  const hasLatin = /[A-Za-z]/.test(text);
+  if (hasLatin && !hasArabic) return 'ltr';
+  return 'auto';
+}
+
+function renderMixedText(text?: string): React.ReactNode {
+  if (!text) return '';
+  const hasArabic = /[\u0600-\u06FF]/.test(text);
+  const hasLatinOrMath = /[A-Za-z×÷−²³√π≤≥≠≈=]/.test(text);
+
+  if (!hasLatinOrMath) {
+    return text;
+  }
+
+  // Pure Latin / Math / English
+  if (!hasArabic) {
+    return (
+      <bdi dir="ltr" lang="en" className="inline-block font-sans">
+        {text}
+      </bdi>
+    );
+  }
+
+  // Mixed Arabic and Latin / Math / English
+  const regex = /([A-Za-z0-9_+\-×÷−²³√π≤≥≠≈=^%$/.:,?!'"()]+(?:\s+[A-Za-z0-9_+\-×÷−²³√π≤≥≠≈=^%$/.:,?!'"()]+)*)/g;
+  const parts = text.split(regex);
+
+  return parts.map((part, idx) => {
+    if (!part) return null;
+    if (/[A-Za-z×÷−²³√π≤≥≠≈=]/.test(part)) {
+      return (
+        <bdi key={idx} dir="ltr" lang="en" className="inline-block font-sans font-medium mx-1">
+          {part}
+        </bdi>
+      );
+    }
+    return <span key={idx}>{part}</span>;
+  });
 }
 
 export default function App() {
@@ -684,6 +756,8 @@ export default function App() {
         skips: 0,
         correctCount: 0,
         correctByType: { ...initialTypeBreakdown },
+        correctByCategory: {},
+        totalByCategory: {},
         lives: 5
       });
     }
@@ -915,8 +989,15 @@ export default function App() {
       const newBest = Math.max(p.bestStreak, newStreak);
       const newCorrectCount = isCorrect ? p.correctCount + 1 : p.correctCount;
       const typeBreakdown = { ...p.correctByType };
-      if (isCorrect && currentQuestion) {
-        typeBreakdown[currentQuestion.type] = (typeBreakdown[currentQuestion.type] || 0) + 1;
+      const catCorrect = { ...(p.correctByCategory || {}) };
+      const catTotal = { ...(p.totalByCategory || {}) };
+
+      if (currentQuestion) {
+        catTotal[currentQuestion.category] = (catTotal[currentQuestion.category] || 0) + 1;
+        if (isCorrect) {
+          typeBreakdown[currentQuestion.type] = (typeBreakdown[currentQuestion.type] || 0) + 1;
+          catCorrect[currentQuestion.category] = (catCorrect[currentQuestion.category] || 0) + 1;
+        }
       }
 
       return {
@@ -926,6 +1007,8 @@ export default function App() {
         bestStreak: newBest,
         correctCount: newCorrectCount,
         correctByType: typeBreakdown,
+        correctByCategory: catCorrect,
+        totalByCategory: catTotal,
         lives: newLives
       };
     });
@@ -1250,7 +1333,9 @@ export default function App() {
       {/* 1. SCREEN: SPLASH */}
       {/* ========================================================= */}
       {currentScreen === 'SPLASH' && (
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 text-center max-w-4xl mx-auto w-full">
+        <>
+          <IntroStageBackground colorMode={colorMode} accentColor={accentColor} />
+          <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 text-center max-w-4xl mx-auto w-full">
           <div className="w-full flex items-center justify-between pb-6">
             <div className="flex items-center gap-2">
               <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20" />
@@ -1347,6 +1432,7 @@ export default function App() {
             </button>
           </div>
         </div>
+        </>
       )}
 
       {/* ========================================================= */}
@@ -1599,7 +1685,7 @@ export default function App() {
               <div className="flex items-center justify-between mb-2.5">
                 <label className="text-xs font-bold text-[var(--accent-light)] flex items-center gap-1.5">
                   <span>التصنيفات الثقافية:</span>
-                  <span className="text-[10px] text-[var(--text-muted)] font-normal">({selectedCategories.length}/10)</span>
+                  <span className="text-[10px] text-[var(--text-muted)] font-normal">({selectedCategories.length}/{CATEGORIES.length})</span>
                 </label>
                 <div className="flex items-center gap-2">
                   <button
@@ -1618,7 +1704,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
                 {CATEGORIES.map(cat => {
                   const isSelected = selectedCategories.includes(cat.id);
                   return (
@@ -1963,8 +2049,8 @@ export default function App() {
             <div className="my-auto py-2">
               {currentQuestion.type === 'direct' && (
                 <div>
-                  <h3 className="question-text text-[var(--text-main)] mb-6 text-center">
-                    {(currentQuestion as DirectQuestion).question}
+                  <h3 dir={getTextDir((currentQuestion as DirectQuestion).question)} className="question-text text-[var(--text-main)] mb-6 text-center">
+                    {renderMixedText((currentQuestion as DirectQuestion).question)}
                   </h3>
                   {revealedLetterHint && (
                     <div className="mb-4 p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-center font-mono text-lg text-amber-600 dark:text-amber-300 font-bold">
@@ -1974,8 +2060,8 @@ export default function App() {
                   {isAnswerRevealed && (
                     <div className="p-4 rounded-2xl glass-panel border border-[var(--border-accent)] text-center animate-in fade-in">
                       <span className="text-xs text-[var(--text-muted)] block mb-1">الإجابة المعتمدة:</span>
-                      <span className="answer-text text-xl md:text-2xl font-bold">
-                        {(currentQuestion as DirectQuestion).answer}
+                      <span dir={getTextDir((currentQuestion as DirectQuestion).answer)} className="answer-text text-xl md:text-2xl font-bold">
+                        {renderMixedText((currentQuestion as DirectQuestion).answer)}
                       </span>
                     </div>
                   )}
@@ -1984,8 +2070,8 @@ export default function App() {
 
               {currentQuestion.type === 'mcq' && (
                 <div>
-                  <h3 className="question-text text-[var(--text-main)] mb-6 text-center">
-                    {(currentQuestion as McqQuestion).question}
+                  <h3 dir={getTextDir((currentQuestion as McqQuestion).question)} className="question-text text-[var(--text-main)] mb-6 text-center">
+                    {renderMixedText((currentQuestion as McqQuestion).question)}
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                     {(currentQuestion as McqQuestion).choices.map((choice, idx) => {
@@ -2010,22 +2096,22 @@ export default function App() {
                           onClick={() => handleSelectMcq(idx)}
                           className={`p-4 rounded-2xl border text-right flex items-center gap-3 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${btnStyle}`}
                         >
-                          <span className="w-8 h-8 rounded-xl bg-black/10 dark:bg-black/40 border border-[var(--border-subtle)] flex items-center justify-center font-bold text-sm text-[var(--accent-light)]">
+                          <span className="w-8 h-8 rounded-xl bg-black/10 dark:bg-black/40 border border-[var(--border-subtle)] flex items-center justify-center font-bold text-sm text-[var(--accent-light)] flex-shrink-0">
                             {letter}
                           </span>
-                          <span className="text-sm md:text-base font-semibold flex-1">
-                            {choice}
+                          <span dir={getTextDir(choice)} className="text-sm md:text-base font-semibold flex-1">
+                            {renderMixedText(choice)}
                           </span>
-                          {selectedChoiceIdx !== null && isCorrect && <Check className="w-5 h-5 text-emerald-500" />}
-                          {selectedChoiceIdx !== null && isSelected && !isCorrect && <X className="w-5 h-5 text-rose-500" />}
+                          {selectedChoiceIdx !== null && isCorrect && <Check className="w-5 h-5 text-emerald-500 flex-shrink-0" />}
+                          {selectedChoiceIdx !== null && isSelected && !isCorrect && <X className="w-5 h-5 text-rose-500 flex-shrink-0" />}
                         </button>
                       );
                     })}
                   </div>
                   {isAnswerRevealed && (
-                    <div className="p-3.5 rounded-2xl glass-panel border border-[var(--border-accent)] text-xs md:text-sm text-[var(--text-secondary)]">
+                    <div dir="auto" className="p-3.5 rounded-2xl glass-panel border border-[var(--border-accent)] text-xs md:text-sm text-[var(--text-secondary)]">
                       <strong className="text-[var(--accent-light)]">💡 هل تعلم؟ </strong>
-                      {(currentQuestion as McqQuestion).explanation}
+                      {renderMixedText((currentQuestion as McqQuestion).explanation)}
                     </div>
                   )}
                 </div>
@@ -2033,8 +2119,8 @@ export default function App() {
 
               {currentQuestion.type === 'tf' && (
                 <div>
-                  <h3 className="question-text text-[var(--text-main)] mb-8 text-center">
-                    {(currentQuestion as TfQuestion).question}
+                  <h3 dir={getTextDir((currentQuestion as TfQuestion).question)} className="question-text text-[var(--text-main)] mb-8 text-center">
+                    {renderMixedText((currentQuestion as TfQuestion).question)}
                   </h3>
                   <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto mb-6">
                     <button
@@ -2069,7 +2155,7 @@ export default function App() {
                   {isAnswerRevealed && (
                     <div className="p-3.5 rounded-2xl glass-panel border border-[var(--border-accent)] text-xs md:text-sm text-[var(--text-secondary)] text-center">
                       <strong className="text-[var(--accent-light)]">💡 التعليل: </strong>
-                      {(currentQuestion as TfQuestion).explanation}
+                      {renderMixedText((currentQuestion as TfQuestion).explanation)}
                     </div>
                   )}
                 </div>
@@ -2082,17 +2168,17 @@ export default function App() {
                       {(currentQuestion as FillQuestion).kind || 'أكمل الناقص'}
                     </span>
                   </div>
-                  <h3 className="question-text text-[var(--text-main)] mb-6 text-center leading-loose">
-                    {(currentQuestion as FillQuestion).text.replace('____', isAnswerRevealed ? `[ ${(currentQuestion as FillQuestion).answer} ]` : '[ ________ ]')}
+                  <h3 dir={getTextDir((currentQuestion as FillQuestion).text)} className="question-text text-[var(--text-main)] mb-6 text-center leading-loose">
+                    {renderMixedText((currentQuestion as FillQuestion).text.replace('____', isAnswerRevealed ? `[ ${(currentQuestion as FillQuestion).answer} ]` : '[ ________ ]'))}
                   </h3>
                   {isAnswerRevealed && (
                     <div className="p-4 rounded-2xl glass-panel border border-[var(--border-accent)] text-center animate-in fade-in">
                       <span className="text-xs text-[var(--text-muted)] block mb-1">الكلمة الناقصة:</span>
-                      <span className="answer-text text-2xl font-bold">
-                        {(currentQuestion as FillQuestion).answer}
+                      <span dir={getTextDir((currentQuestion as FillQuestion).answer)} className="answer-text text-2xl font-bold">
+                        {renderMixedText((currentQuestion as FillQuestion).answer)}
                       </span>
-                      <p className="text-xs text-[var(--text-secondary)] mt-2">
-                        {(currentQuestion as FillQuestion).explanation}
+                      <p dir="auto" className="text-xs text-[var(--text-secondary)] mt-2">
+                        {renderMixedText((currentQuestion as FillQuestion).explanation)}
                       </p>
                     </div>
                   )}
@@ -2102,7 +2188,7 @@ export default function App() {
               {currentQuestion.type === 'match' && (
                 <div>
                   <h4 className="text-sm md:text-base font-bold text-[var(--accent-light)] text-center mb-4">
-                    {(currentQuestion as MatchQuestion).title}
+                    {renderMixedText((currentQuestion as MatchQuestion).title)}
                   </h4>
                   <div className="grid grid-cols-2 gap-4 max-w-xl mx-auto mb-4">
                     <div className="flex flex-col gap-2.5">
@@ -2112,6 +2198,7 @@ export default function App() {
                         return (
                           <div
                             key={idx}
+                            dir={getTextDir(item.text)}
                             onClick={() => handleSelectMatchCard('right', idx)}
                             style={{ borderColor: conn ? conn.color : undefined }}
                             className={`p-3 rounded-xl border text-center text-xs md:text-sm font-semibold cursor-pointer transition-all ${
@@ -2120,7 +2207,7 @@ export default function App() {
                               'glass-panel hover:border-[var(--border-accent)]'
                             }`}
                           >
-                            {item.text}
+                            {renderMixedText(item.text)}
                           </div>
                         );
                       })}
@@ -2132,6 +2219,7 @@ export default function App() {
                         return (
                           <div
                             key={idx}
+                            dir={getTextDir(item.text)}
                             onClick={() => handleSelectMatchCard('left', idx)}
                             style={{ borderColor: conn ? conn.color : undefined }}
                             className={`p-3 rounded-xl border text-center text-xs md:text-sm font-semibold cursor-pointer transition-all ${
@@ -2140,7 +2228,7 @@ export default function App() {
                               'glass-panel'
                             }`}
                           >
-                            {item.text}
+                            {renderMixedText(item.text)}
                           </div>
                         );
                       })}
@@ -2182,13 +2270,13 @@ export default function App() {
                               : 'glass-panel opacity-40'
                           }`}
                         >
-                          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                             isRevealed ? 'bg-[var(--accent-primary)] text-[var(--accent-contrast)]' : 'bg-black/20 text-[var(--text-muted)]'
                           }`}>
                             {idx + 1}
                           </span>
-                          <span className="text-xs md:text-sm flex-1 leading-relaxed">
-                            {isRevealed ? hint : 'تلميح مغلق (سيتكشف تدريجياً)...'}
+                          <span dir={getTextDir(hint)} className="text-xs md:text-sm flex-1 leading-relaxed">
+                            {isRevealed ? renderMixedText(hint) : 'تلميح مغلق (سيتكشف تدريجياً)...'}
                           </span>
                         </div>
                       );
@@ -2206,8 +2294,8 @@ export default function App() {
                     {isAnswerRevealed && (
                       <div className="text-right">
                         <span className="text-xs text-[var(--text-muted)] ml-2">الإجابة:</span>
-                        <span className="answer-text font-bold text-lg">
-                          {(currentQuestion as HintsQuestion).answer}
+                        <span dir={getTextDir((currentQuestion as HintsQuestion).answer)} className="answer-text font-bold text-lg">
+                          {renderMixedText((currentQuestion as HintsQuestion).answer)}
                         </span>
                       </div>
                     )}
@@ -2394,6 +2482,22 @@ export default function App() {
                     <span className="text-[11px] text-[var(--text-muted)]">أطول سلسلة</span>
                   </div>
                 </div>
+
+                {(() => {
+                  const catEntries = Object.entries(players[0].correctByCategory || {});
+                  if (catEntries.length > 0) {
+                    const sorted = [...catEntries].sort((a, b) => b[1] - a[1]);
+                    const bestCat = sorted[0];
+                    return (
+                      <div className="mb-6 p-3 rounded-2xl glass-panel border border-[var(--border-accent)] flex items-center justify-center gap-2 text-xs md:text-sm text-[var(--accent-light)] font-semibold">
+                        <span>🏆 أقوى تصنيف لك في هذه الجولة:</span>
+                        <strong className="text-[var(--text-main)] underline">{bestCat[0]}</strong>
+                        <span>({bestCat[1]} إجابة صحيحة)</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             ) : (
               <div>
@@ -2466,6 +2570,28 @@ export default function App() {
                               </span>
                             ))}
                           </div>
+
+                          {(() => {
+                            const catEntries = Object.entries(p.correctByCategory || {});
+                            if (catEntries.length > 0) {
+                              const sorted = [...catEntries].sort((a, b) => b[1] - a[1]);
+                              const bestCat = sorted[0];
+                              const worstCat = sorted[sorted.length - 1];
+                              return (
+                                <div className="mt-1.5 pt-1.5 border-t border-[var(--border-subtle)] flex items-center justify-between text-[10px]">
+                                  <span className="text-[var(--accent-light)] font-semibold">
+                                    🏆 أقوى تصنيف: <strong className="text-[var(--text-main)]">{bestCat[0]}</strong> ({bestCat[1]})
+                                  </span>
+                                  {sorted.length > 1 && worstCat[1] < bestCat[1] && (
+                                    <span className="text-[var(--text-muted)]">
+                                      أضعف: {worstCat[0]} ({worstCat[1]})
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                       );
                     })}

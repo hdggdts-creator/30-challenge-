@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>تحدي الثلاثين - النسخة الثقافية المطوّرة</title>
     <meta name="description" content="لعبة المسابقات الثقافية والمعلومات العامة للأفراد والفرق بنظام الثلاثين نقطة و6 أنماط أسئلة تفاعلية ومؤقت تنافسي فاخر" />
+    <meta property="og:title" content="تحدي الثلاثين - النسخة الثقافية المطوّرة" />
+    <meta property="og:description" content="لعبة المسابقات الثقافية والمعلومات العامة للأفراد والفرق بنظام الثلاثين نقطة و6 أنماط أسئلة تفاعلية ومؤقت تنافسي فاخر" />
     
     <!-- PWA & Mobile Meta Tags -->
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -15,6 +17,10 @@
     <meta name="apple-mobile-web-app-title" content="تحدي 30" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="apple-touch-icon" href="/icon.svg" />
+
+    <!-- Preload First Intro Stage Background (Responsive by Orientation) -->
+    <link rel="preload" as="image" href="/assets/bg-intro-dark-wide.webp" type="image/webp" media="(orientation: landscape) and (min-aspect-ratio: 1/1)" fetchpriority="high" />
+    <link rel="preload" as="image" href="/assets/bg-intro-dark-tall.webp" type="image/webp" media="(orientation: portrait), (max-aspect-ratio: 1/1)" fetchpriority="high" />
 
     <!-- Google Fonts: Cairo & Reem Kufi -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

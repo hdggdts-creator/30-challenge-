@@ -10,7 +10,12 @@
 
 window.QUESTION_BANK = [
   ...(window.QUESTION_BANK_PART1 || []),
-  ...(window.QUESTION_BANK_PART2 || [])
+  ...(window.QUESTION_BANK_PART2 || []),
+  ...(window.QUESTION_BANK_EXTRA || []),
+  ...(window.QUESTION_BANK_NEW || []),
+  ...(window.QUESTION_BANK_PACK3 || []),
+  ...(window.QUESTION_BANK_EXTRA_5 || []),
+  ...(window.QUESTION_BANK_EXTRA_6 || [])
 ];
 
 // التأكد من توفر الأسئلة في البيئة العامة

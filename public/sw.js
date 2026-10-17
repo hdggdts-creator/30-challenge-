@@ -1,9 +1,9 @@
 /**
  * Service Worker for "تحدي الثلاثين" PWA
- * Version: tahaddi-v6
+ * Version: tahaddi-v11
  */
 
-const CACHE_NAME = 'tahaddi-v6';
+const CACHE_NAME = 'tahaddi-v11';
 const PRECACHE_ASSETS = [
   './',
   './index.html',
@@ -11,6 +11,14 @@ const PRECACHE_ASSETS = [
   './icon.svg',
   './questions.js',
   './questions-extra.js',
+  './questions-new.js',
+  './questions-pack3.js',
+  './questions-extra-5.js',
+  './questions-extra-6.js',
+  './assets/bg-intro-dark-wide.webp',
+  './assets/bg-intro-dark-tall.webp',
+  './assets/bg-intro-light-wide.webp',
+  './assets/bg-intro-light-tall.webp',
   './tahadi-al-thalatheen.html'
 ];
 

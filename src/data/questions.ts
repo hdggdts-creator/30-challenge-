@@ -1,5 +1,9 @@
 export type QuestionType = 'direct' | 'mcq' | 'tf' | 'fill' | 'match' | 'hints';
 import { EXTRA_QUESTIONS } from './questions-extra';
+import { NEW_CATEGORIES_QUESTIONS } from './questions-new';
+import { QUESTIONS_PACK_75 } from './questions-75';
+import { QUESTIONS_EXTRA_5 } from './questions-extra-5';
+import { QUESTIONS_EXTRA_6 } from './questions-extra-6';
 
 export interface BaseQuestion {
   id: string;
@@ -13,6 +17,7 @@ export interface DirectQuestion extends BaseQuestion {
   question: string;
   answer: string;
   hint: string;
+  accept?: string[];
 }
 
 export interface McqQuestion extends BaseQuestion {
@@ -130,6 +135,9 @@ export const CATEGORIES = [
   { id: 'لغة عربية', name: 'لغة عربية', icon: 'book-open', color: '#2DD4BF' },
   { id: 'اقتصاد ومال', name: 'اقتصاد ومال', icon: 'coins', color: '#F59E0B' },
   { id: 'ألغاز ومنطق', name: 'ألغاز ومنطق', icon: 'brain', color: '#A78BFA' },
+  { id: 'الرياضة', name: 'الرياضة', icon: 'trophy', color: '#FB923C' },
+  { id: 'الرياضيات', name: 'الرياضيات', icon: 'calculator', color: '#22D3EE' },
+  { id: 'قواعد الإنجليزية', name: 'قواعد الإنجليزية', icon: 'languages', color: '#F43F5E' },
 ] as const;
 
 export const QUESTIONS_BANK: Question[] = [
@@ -720,6 +728,10 @@ export const QUESTIONS_BANK: Question[] = [
     answer: 'المشط',
     hint: 'نستخدمه لتسريح الشعر كل يوم'
   },
-  ...EXTRA_QUESTIONS
+  ...EXTRA_QUESTIONS,
+  ...NEW_CATEGORIES_QUESTIONS,
+  ...QUESTIONS_PACK_75,
+  ...QUESTIONS_EXTRA_5,
+  ...QUESTIONS_EXTRA_6
 ];
 

@@ -35,6 +35,19 @@
 
     --page-bg: radial-gradient(ellipse at 50% 0%, #151522 0%, #07070B 80%);
     --theme-meta: #07070B;
+
+    /* Intro Stage Background (Dark Wide/Default) */
+    --bg-intro-img: url('/assets/bg-intro-dark-wide.webp');
+    --bg-intro-fallback: radial-gradient(ellipse at 50% 25%, rgba(212, 175, 55, 0.16) 0%, transparent 70%), linear-gradient(180deg, #07070B 0%, #0D0F1B 50%, #07070B 100%);
+    --bg-intro-overlay: radial-gradient(ellipse at 50% 40%, rgba(7, 7, 11, 0.58) 0%, rgba(7, 7, 11, 0.82) 65%, rgba(3, 3, 6, 0.95) 100%), linear-gradient(180deg, rgba(7, 7, 11, 0.72) 0%, rgba(7, 7, 11, 0.42) 35%, rgba(7, 7, 11, 0.88) 100%);
+    --bg-intro-vignette: radial-gradient(circle at center, transparent 45%, rgba(0, 0, 0, 0.65) 100%);
+  }
+
+  /* Dark Portrait (Mobile/Tall) */
+  @media (orientation: portrait), (max-aspect-ratio: 1/1) {
+    :root, [data-mode="dark"] {
+      --bg-intro-img: url('/assets/bg-intro-dark-tall.webp');
+    }
   }
 
   [data-mode="light"] {
@@ -63,6 +76,19 @@
 
     --page-bg: linear-gradient(135deg, #FBF7EC 0%, #F6EEDB 50%, #EFE4CC 100%);
     --theme-meta: #FBF7EC;
+
+    /* Intro Stage Background (Light Wide/Default) */
+    --bg-intro-img: url('/assets/bg-intro-light-wide.webp');
+    --bg-intro-fallback: radial-gradient(ellipse at 50% 25%, rgba(184, 134, 11, 0.16) 0%, transparent 70%), linear-gradient(180deg, #FBF7EC 0%, #F3EBD7 50%, #EFE4CC 100%);
+    --bg-intro-overlay: radial-gradient(ellipse at 50% 40%, rgba(251, 247, 236, 0.68) 0%, rgba(246, 238, 219, 0.86) 65%, rgba(235, 222, 195, 0.95) 100%), linear-gradient(180deg, rgba(251, 247, 236, 0.78) 0%, rgba(251, 247, 236, 0.48) 35%, rgba(241, 232, 211, 0.92) 100%);
+    --bg-intro-vignette: radial-gradient(circle at center, transparent 50%, rgba(120, 95, 45, 0.28) 100%);
+  }
+
+  /* Light Portrait (Mobile/Tall) */
+  @media (orientation: portrait), (max-aspect-ratio: 1/1) {
+    [data-mode="light"] {
+      --bg-intro-img: url('/assets/bg-intro-light-tall.webp');
+    }
   }
 
   /* ========================================================
@@ -308,3 +334,54 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--accent-primary);
 }
+
+/* ========================================================
+   INTRO STAGE LUXURY BACKGROUND (Cover, Theme Overlay, Fallback)
+   ======================================================== */
+.intro-stage-container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  /* Stack layers:
+     1) Edge vignette
+     2) Contrast theme overlay (ensures >= 4.5:1 text/button contrast in both modes)
+     3) Mode & orientation responsive WebP stage image
+     4) CSS gradient fallback from theme variables if image fails or before load
+  */
+  background-image: 
+    var(--bg-intro-vignette),
+    var(--bg-intro-overlay),
+    var(--bg-intro-img),
+    var(--bg-intro-fallback);
+  background-size: cover, cover, cover, cover;
+  background-position: center center, center center, center center, center center;
+  background-repeat: no-repeat;
+  transition: opacity 0.5s ease-in-out;
+}
+
+/* Subtle Slow Ambient Glow Motion on the Stage Spotlight */
+@keyframes stageLightPulse {
+  0%, 100% {
+    opacity: 0.96;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.015);
+  }
+}
+
+.intro-stage-animated {
+  animation: stageLightPulse 14s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-stage-animated {
+    animation: none !important;
+  }
+}
+
