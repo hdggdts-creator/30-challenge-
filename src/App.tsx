@@ -7,7 +7,7 @@ import {
   Flame, Clock, PhoneCall, KeyRound, Zap, WifiOff, CheckCircle2,
   HelpCircle, ListChecks, PenLine, Layers, Lightbulb, ChevronLeft, RefreshCw,
   Share2, Copy, CheckCheck, ExternalLink, MessageCircle, Send, Mail,
-  User, Users, Crown, Heart, HeartCrack, Shuffle, Dice5
+  User, Users, Crown, Heart, HeartCrack, Shuffle, Dice5, Sun, Laptop, Trash2
 } from 'lucide-react';
 import { 
   CATEGORIES, QUESTIONS_BANK, QUESTION_MODES, 
@@ -16,12 +16,18 @@ import {
 import { sounds } from './utils/audio';
 import { triggerConfetti } from './utils/confetti';
 
-type Screen = 'SPLASH' | 'SETUP' | 'PLAY' | 'VICTORY';
-type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard';
-type ThemeType = 'gold' | 'royal-blue' | 'emerald' | 'auto';
-export type GameMode = 'solo' | 'duo' | 'trio' | 'quad';
+// ============================================================================
+// ضبط رابط المشاركة العام للعبة (SHARE_URL):
+// - اتركه فارغاً "" للاعتماد التلقائي على عنوان الموقع الحالي للمتصفح.
+// - أو ضع رابط النشر المخصص الخاص بك، مثال: "https://my-quiz-app.com"
+// ============================================================================
+export const SHARE_URL: string = "";
 
-const SHARE_URL: string = ""; // إذا كان فارغاً يتم استخدام الرابط التلقائي
+export type ColorMode = 'light' | 'dark' | 'auto';
+export type AccentColor = 'gold' | 'royal-blue' | 'emerald';
+export type Screen = 'SPLASH' | 'SETUP' | 'PLAY' | 'VICTORY';
+export type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard';
+export type GameMode = 'solo' | 'duo' | 'trio' | 'quad';
 
 interface LifelinesState {
   letter: boolean;    // كشف الحرف الأول / حذف خيارين
@@ -58,47 +64,31 @@ interface SoloRecord {
   date: string;
 }
 
-const PLAYER_COLORS = [
-  {
-    name: 'ذهبي',
-    border: 'border-[#D4AF37]',
-    borderGlow: 'gold-glow',
-    text: 'text-[#F5D77A]',
-    bg: 'bg-[#D4AF37]/15',
-    badge: 'bg-[#D4AF37] text-slate-950',
-    hex: '#D4AF37'
-  },
-  {
-    name: 'أزرق',
-    border: 'border-sky-400',
-    borderGlow: 'shadow-[0_0_20px_-3px_rgba(56,189,248,0.35)]',
-    text: 'text-sky-300',
-    bg: 'bg-sky-500/15',
-    badge: 'bg-sky-500 text-slate-950',
-    hex: '#38BDF8'
-  },
-  {
-    name: 'زمردي',
-    border: 'border-emerald-400',
-    borderGlow: 'shadow-[0_0_20px_-3px_rgba(16,185,129,0.35)]',
-    text: 'text-emerald-300',
-    bg: 'bg-emerald-500/15',
-    badge: 'bg-emerald-500 text-slate-950',
-    hex: '#10B981'
-  },
-  {
-    name: 'بنفسجي',
-    border: 'border-purple-400',
-    borderGlow: 'shadow-[0_0_20px_-3px_rgba(192,132,252,0.35)]',
-    text: 'text-purple-300',
-    bg: 'bg-purple-500/15',
-    badge: 'bg-purple-500 text-slate-950',
-    hex: '#C084FC'
-  }
-];
+// Player Theme Dynamic Style Resolver (No Hardcoded Hex Colors!)
+function getPlayerTheme(colorIndex: number) {
+  const idx = (colorIndex % 4) + 1;
+  return {
+    idx,
+    varColor: `var(--player-${idx}-color)`,
+    varLight: `var(--player-${idx}-light)`,
+    varBg: `var(--player-${idx}-bg)`,
+    varBorder: `var(--player-${idx}-border)`,
+    styleCard: {
+      borderColor: `var(--player-${idx}-border)`,
+      backgroundColor: `var(--player-${idx}-bg)`,
+    },
+    styleText: {
+      color: `var(--player-${idx}-color)`,
+    },
+    styleBadge: {
+      backgroundColor: `var(--player-${idx}-color)`,
+      color: 'var(--accent-contrast)',
+    }
+  };
+}
 
 const CATEGORY_ICON_MAP: Record<string, React.ReactNode> = {
-  'تاريخ': <Landmark className="w-5 h-5 text-[#D4AF37]" />,
+  'تاريخ': <Landmark className="w-5 h-5 text-[var(--accent-primary)]" />,
   'جغرافيا': <Globe className="w-5 h-5 text-sky-400" />,
   'علوم': <Atom className="w-5 h-5 text-emerald-400" />,
   'ثقافة إسلامية': <Moon className="w-5 h-5 text-amber-400" />,
@@ -111,7 +101,7 @@ const CATEGORY_ICON_MAP: Record<string, React.ReactNode> = {
 };
 
 const MODE_ICON_MAP: Record<QuestionType, React.ReactNode> = {
-  direct: <HelpCircle className="w-5 h-5 text-[#D4AF37]" />,
+  direct: <HelpCircle className="w-5 h-5 text-[var(--accent-primary)]" />,
   mcq: <ListChecks className="w-5 h-5 text-sky-400" />,
   tf: <CheckCircle2 className="w-5 h-5 text-emerald-400" />,
   fill: <PenLine className="w-5 h-5 text-amber-400" />,
@@ -145,58 +135,81 @@ export default function App() {
   const [isQuitModalOpen, setIsQuitModalOpen] = useState(false);
   const [isMuted, setIsMuted] = useState(sounds.getMuted());
 
-  // Theme Management
-  const [currentTheme, setCurrentTheme] = useState<ThemeType>(() => {
+  // ============================================================================
+  // التعديل 1: فصل الوضع (mode) عن لون التمييز (accent) مع دعم التلقائي
+  // ============================================================================
+  const [colorMode, setColorMode] = useState<ColorMode>(() => {
     try {
-      const saved = localStorage.getItem('tahadi_theme');
-      if (saved && ['gold', 'royal-blue', 'emerald', 'auto'].includes(saved)) {
-        return saved as ThemeType;
+      const savedMode = localStorage.getItem('tahadi_color_mode');
+      if (savedMode && ['light', 'dark', 'auto'].includes(savedMode)) {
+        return savedMode as ColorMode;
+      }
+      const legacy = localStorage.getItem('tahadi_theme');
+      if (legacy === 'auto') return 'auto';
+    } catch (e) {}
+    return 'dark';
+  });
+
+  const [accentColor, setAccentColor] = useState<AccentColor>(() => {
+    try {
+      const savedAccent = localStorage.getItem('tahadi_accent_color');
+      if (savedAccent && ['gold', 'royal-blue', 'emerald'].includes(savedAccent)) {
+        return savedAccent as AccentColor;
+      }
+      const legacy = localStorage.getItem('tahadi_theme');
+      if (legacy && ['gold', 'royal-blue', 'emerald'].includes(legacy)) {
+        return legacy as AccentColor;
       }
     } catch (e) {}
     return 'gold';
   });
+
   const [isThemePopoverOpen, setIsThemePopoverOpen] = useState(false);
   const themePopoverRef = useRef<HTMLDivElement>(null);
 
-  const applyTheme = useCallback((theme: ThemeType) => {
-    setCurrentTheme(theme);
-    let resolved = theme;
-    if (theme === 'auto') {
-      resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'gold' : 'royal-blue';
+  // Apply theme attributes dynamically to documentElement
+  const applyThemeAttributes = useCallback((mode: ColorMode, accent: AccentColor) => {
+    let resolvedMode: 'light' | 'dark' = 'dark';
+    if (mode === 'auto') {
+      resolvedMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } else {
+      resolvedMode = mode;
     }
-    document.documentElement.setAttribute('data-theme', resolved);
+
+    document.documentElement.setAttribute('data-mode', resolvedMode);
+    document.documentElement.setAttribute('data-accent', accent);
+
     const metaTheme = document.getElementById('metaThemeColor') || document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
-      const colors: Record<string, string> = {
-        'gold': '#07070B',
-        'royal-blue': '#060B1A',
-        'emerald': '#04120E'
-      };
-      metaTheme.setAttribute('content', colors[resolved] || '#07070B');
+      metaTheme.setAttribute('content', resolvedMode === 'light' ? '#FBF7EC' : '#07070B');
     }
+
     try {
-      localStorage.setItem('tahadi_theme', theme);
+      localStorage.setItem('tahadi_color_mode', mode);
+      localStorage.setItem('tahadi_accent_color', accent);
     } catch (e) {}
   }, []);
 
   useEffect(() => {
-    applyTheme(currentTheme);
+    applyThemeAttributes(colorMode, accentColor);
+
     const mql = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleMediaChange = () => {
-      if (currentTheme === 'auto') {
-        applyTheme('auto');
+    const handleSystemChange = () => {
+      if (colorMode === 'auto') {
+        applyThemeAttributes('auto', accentColor);
       }
     };
-    mql.addEventListener('change', handleMediaChange);
-    return () => mql.removeEventListener('change', handleMediaChange);
-  }, [currentTheme, applyTheme]);
+    mql.addEventListener('change', handleSystemChange);
+    return () => mql.removeEventListener('change', handleSystemChange);
+  }, [colorMode, accentColor, applyThemeAttributes]);
 
-  const cycleTheme = useCallback(() => {
-    const list: ThemeType[] = ['gold', 'royal-blue', 'emerald', 'auto'];
-    const nextIdx = (list.indexOf(currentTheme) + 1) % list.length;
+  // Quick Cycle theme with shortcut 't' / 'T' / 'ف'
+  const cycleAccent = useCallback(() => {
+    const list: AccentColor[] = ['gold', 'royal-blue', 'emerald'];
+    const nextIdx = (list.indexOf(accentColor) + 1) % list.length;
     sounds.playClick();
-    applyTheme(list[nextIdx]);
-  }, [currentTheme, applyTheme]);
+    setAccentColor(list[nextIdx]);
+  }, [accentColor]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -204,7 +217,7 @@ export default function App() {
         return;
       }
       if (e.key === 't' || e.key === 'T' || e.key === 'ف') {
-        cycleTheme();
+        cycleAccent();
       }
       if (e.key === 'Escape') {
         setIsThemePopoverOpen(false);
@@ -212,7 +225,7 @@ export default function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [cycleTheme]);
+  }, [cycleAccent]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -226,26 +239,54 @@ export default function App() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isThemePopoverOpen]);
 
-  // Share Modal State
+  // ============================================================================
+  // التعديل 2: سجل الأسئلة المستعرضة وتجنب التكرار عبر الألعاب
+  // ============================================================================
+  const [seenQuestionIds, setSeenQuestionIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('tahadi_seen_questions');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {}
+    return [];
+  });
+
+  const resetSeenQuestions = () => {
+    sounds.playClick();
+    setSeenQuestionIds([]);
+    try {
+      localStorage.removeItem('tahadi_seen_questions');
+    } catch (e) {}
+    addToast('تم التصفير', 'تم تصفير سجل الأسئلة بنجاح. ستظهر جميع الأسئلة مجدداً!', 'gold');
+  };
+
+  // ============================================================================
+  // التعديل 3: ضبط SHARE_URL وميزات المشاركة المتقدمة
+  // ============================================================================
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareCustomText, setShareCustomText] = useState('تحدّى أصدقاءك في لعبة المعلومات العامة والثقافة!');
   const [isCopied, setIsCopied] = useState(false);
 
   const getComputedShareUrl = useCallback(() => {
     if (SHARE_URL && SHARE_URL.trim() !== '') return SHARE_URL.trim();
-    return window.location.origin + window.location.pathname;
+    if (typeof window !== 'undefined' && window.location) {
+      return window.location.origin + window.location.pathname;
+    }
+    return '';
   }, []);
 
   const handleShareGame = async (customMessage?: string) => {
     sounds.playClick();
-    const textToShare = customMessage || 'تحدّى أصدقاءك في لعبة المعلومات العامة والثقافة!';
+    const textToShare = customMessage || 'تحدّى أصدقاءك في لعبة المعلومات العامة والثقافة بـ 30 نقطة!';
     setShareCustomText(textToShare);
     const url = getComputedShareUrl();
 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'تحدي الثلاثين',
+          title: 'تحدي الثلاثين - النسخة الثقافية',
           text: textToShare,
           url: url
         });
@@ -260,12 +301,13 @@ export default function App() {
   const handleCopyLink = async () => {
     sounds.playClick();
     const url = getComputedShareUrl();
+    const fullShareText = `${shareCustomText}\n\nالرابط المباشر:\n${url}`;
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(url);
+        await navigator.clipboard.writeText(fullShareText);
       } else {
         const textArea = document.createElement('textarea');
-        textArea.value = url;
+        textArea.value = fullShareText;
         document.body.appendChild(textArea);
         textArea.select();
         document.execCommand('copy');
@@ -273,6 +315,7 @@ export default function App() {
       }
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
+      addToast('تم النسخ', 'تم نسخ النتيجة والرابط إلى الحافظة بنجاح ✓', 'gold');
     } catch (err) {}
   };
 
@@ -484,7 +527,6 @@ export default function App() {
 
   const currentQuestion: Question | undefined = gameQuestions[currentQuestionIndex];
 
-  // Helper: Get player count from mode
   const getPlayerCount = useCallback((mode: GameMode): number => {
     switch (mode) {
       case 'solo': return 1;
@@ -495,7 +537,6 @@ export default function App() {
     }
   }, []);
 
-  // Update Player Name with Deduplication check
   const handlePlayerNameChange = (idx: number, newName: string) => {
     const updated = [...playerNames];
     updated[idx] = newName.slice(0, 16);
@@ -505,9 +546,19 @@ export default function App() {
     } catch (e) {}
   };
 
-  // Reset per-question state
+  // Reset per-question state & mark question seen
   useEffect(() => {
     if (!currentQuestion) return;
+
+    // Track question as seen in history
+    setSeenQuestionIds(prev => {
+      if (prev.includes(currentQuestion.id)) return prev;
+      const next = [...prev, currentQuestion.id];
+      try {
+        localStorage.setItem('tahadi_seen_questions', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
 
     setSelectedChoiceIdx(null);
     setSelectedTfChoice(null);
@@ -593,20 +644,18 @@ export default function App() {
     setSelectedCategories(shuffled.slice(0, 5));
   };
 
-  // Start Game with Draw Animation
+  // Start Game with Question Anti-Repetition Selection
   const initiateStartGame = () => {
     if (selectedCategories.length < 3 || enabledModes.length === 0) return;
     sounds.playClick();
 
     const count = getPlayerCount(gameMode);
 
-    // Save settings
     try {
       localStorage.setItem('tahadi_gamemode', gameMode);
       localStorage.setItem('tahadi_round_completion', JSON.stringify(roundCompletionEnabled));
     } catch (e) {}
 
-    // Prepare Deduplicated Player Names
     const preparedPlayers: Player[] = [];
     const usedNames = new Set<string>();
 
@@ -659,14 +708,30 @@ export default function App() {
       filtered = QUESTIONS_BANK.filter(q => enabledModes.includes(q.type));
     }
 
-    // Multiply question pool adequately for 4 players or tie-breakers
-    let shuffled = shuffleArray(filtered);
+    // Anti-Repetition: Prefer Unseen Questions
+    const unseen = filtered.filter(q => !seenQuestionIds.includes(q.id));
+    let questionPool: Question[] = [];
+
     const minNeeded = count * 25 + 20;
-    while (shuffled.length < minNeeded) {
-      shuffled = [...shuffled, ...shuffleArray(filtered)];
+
+    if (unseen.length >= minNeeded) {
+      questionPool = shuffleArray(unseen);
+    } else if (unseen.length > 0) {
+      // Use all unseen first, then supplement with previously seen questions
+      const seenFiltered = filtered.filter(q => seenQuestionIds.includes(q.id));
+      questionPool = [...shuffleArray(unseen), ...shuffleArray(seenFiltered)];
+    } else {
+      // Entire bank seen: Reset history for this bank and start fresh cycle!
+      questionPool = shuffleArray(filtered);
+      addToast('تدوير بنك الأسئلة', 'تم استعراض كافة أسئلة هذه الفئة، بدأت دورة جديدة!', 'gold');
     }
 
-    setGameQuestions(shuffled);
+    let finalGameQuestions = [...questionPool];
+    while (finalGameQuestions.length < minNeeded) {
+      finalGameQuestions = [...finalGameQuestions, ...shuffleArray(filtered)];
+    }
+
+    setGameQuestions(finalGameQuestions);
     setCurrentQuestionIndex(0);
 
     // Starting player selection
@@ -698,40 +763,26 @@ export default function App() {
 
   // Determine game over and winner
   const checkGameOver = (currentPlayers: Player[], nextQIndex: number): boolean => {
-    // 1. SOLO MODE
     if (gameMode === 'solo') {
       const p = currentPlayers[0];
-      if (p.lives <= 0) {
-        return true; // Lost
-      }
-      if (p.score >= targetScore) {
-        return true; // Won
-      }
-      if (nextQIndex >= gameQuestions.length) {
-        return true; // Ran out of questions
-      }
+      if (p.lives <= 0) return true;
+      if (p.score >= targetScore) return true;
+      if (nextQIndex >= gameQuestions.length) return true;
       return false;
     }
 
-    // 2. TIE BREAKER ACTIVE
     if (isTieBreaker) {
-      // Check if all tied players have completed their tie breaker turn
       const nextTieTurn = (tieBreakerTurnIndex + 1) % tiedPlayerIndices.length;
       if (nextTieTurn === 0) {
-        // End of tie breaker round: check if scores diverge
         const tiedScores = tiedPlayerIndices.map(idx => currentPlayers[idx].score);
         const maxScore = Math.max(...tiedScores);
         const leaders = tiedPlayerIndices.filter(idx => currentPlayers[idx].score === maxScore);
-        if (leaders.length === 1) {
-          return true; // Single winner found!
-        }
-        // Still tied: update tied players list if some were eliminated
+        if (leaders.length === 1) return true;
         setTiedPlayerIndices(leaders);
       }
       return false;
     }
 
-    // 3. MULTIPLAYER STANDARD
     const anyHitTarget = currentPlayers.some(p => p.score >= targetScore);
     const ranOut = nextQIndex >= gameQuestions.length;
 
@@ -741,55 +792,51 @@ export default function App() {
       return false;
     }
 
-    // With round completion enabled:
     if (anyHitTarget && !isFinalRound) {
       setIsFinalRound(true);
     }
 
-    // If final round is active or questions ran out, check if current round is complete
     const isRoundComplete = (currentPlayerIndex + 1) % currentPlayers.length === 0;
 
-    if ((isFinalRound || anyHitTarget || ranOut) && isRoundComplete) {
-      // Evaluate if there is a tie for 1st place
+    if (isFinalRound && isRoundComplete) {
       const maxScore = Math.max(...currentPlayers.map(p => p.score));
-      const leaders = currentPlayers.map((p, i) => i).filter(i => currentPlayers[i].score === maxScore);
+      const leaders = currentPlayers
+        .map((p, idx) => ({ p, idx }))
+        .filter(item => item.p.score === maxScore && item.p.score >= targetScore);
 
-      if (leaders.length > 1) {
-        // Enter tie breaker!
+      if (leaders.length === 1) {
+        return true;
+      } else if (leaders.length > 1) {
         setIsTieBreaker(true);
-        setTiedPlayerIndices(leaders);
+        setTiedPlayerIndices(leaders.map(l => l.idx));
         setTieBreakerTurnIndex(0);
-        addToast('⚡ جولة فاصلة!', 'تعادل في الصدارة! بدء جولة الموت المفاجئ', 'wager');
+        addToast('جولة فاصلة ⚡', `تعادل في الصدارة! جولة الموت المفاجئ بين ${leaders.length} لاعبين`, 'streak');
         return false;
       }
-      return true;
     }
 
+    if (ranOut) return true;
     return false;
   };
 
-  // Transition to next player / question
-  const advanceToNext = (updatedPlayers: Player[]) => {
+  // Advance game to next turn or end
+  const advanceToNextQuestion = (updatedPlayers: Player[]) => {
     const nextQIndex = currentQuestionIndex + 1;
     const isOver = checkGameOver(updatedPlayers, nextQIndex);
 
     if (isOver) {
       stopTimer();
-      sounds.playVictory();
+      setCurrentScreen('VICTORY');
       triggerConfetti();
 
-      // Check Solo Record
       if (gameMode === 'solo') {
         const p = updatedPlayers[0];
         const elapsedSec = Math.round((Date.now() - gameStartTime) / 1000);
         setSoloFinalTimeSeconds(elapsedSec);
 
         if (p.score >= targetScore) {
-          const isBetter = !soloRecord || 
-            (soloQuestionsAnswered + 1 < soloRecord.questionsCount) ||
-            (soloQuestionsAnswered + 1 === soloRecord.questionsCount && elapsedSec < soloRecord.timeSeconds);
-
-          if (isBetter) {
+          sounds.playFanfare();
+          if (!soloRecord || elapsedSec < soloRecord.timeSeconds || (elapsedSec === soloRecord.timeSeconds && soloQuestionsAnswered < soloRecord.questionsCount)) {
             const newRec: SoloRecord = {
               questionsCount: soloQuestionsAnswered + 1,
               timeSeconds: elapsedSec,
@@ -802,328 +849,365 @@ export default function App() {
               localStorage.setItem('tahadi_solo_record', JSON.stringify(newRec));
             } catch (e) {}
           }
+        } else {
+          sounds.playWrong();
         }
-      }
-
-      setCurrentScreen('VICTORY');
-    } else {
-      setCurrentQuestionIndex(nextQIndex);
-      setIsAnswerRevealed(false);
-      setIsProcessingAnswer(false);
-      setUsedLifelineThisQuestion(false);
-      setRevealedLetterHint(null);
-      setIsCurrentQuestionWager(false);
-
-      if (gameMode === 'solo') {
-        setSoloQuestionsAnswered(prev => prev + 1);
-        setWagerModalOpen(true);
-      } else if (isTieBreaker) {
-        const nextTieIdx = (tieBreakerTurnIndex + 1) % tiedPlayerIndices.length;
-        setTieBreakerTurnIndex(nextTieIdx);
-        setCurrentPlayerIndex(tiedPlayerIndices[nextTieIdx]);
-        setWagerModalOpen(true);
       } else {
-        const nextPlayer = (currentPlayerIndex + 1) % updatedPlayers.length;
-        setCurrentPlayerIndex(nextPlayer);
-        setWagerModalOpen(true);
+        sounds.playFanfare();
       }
+      return;
     }
+
+    // Switch turn
+    if (isTieBreaker) {
+      const nextTieTurn = (tieBreakerTurnIndex + 1) % tiedPlayerIndices.length;
+      setTieBreakerTurnIndex(nextTieTurn);
+      setCurrentPlayerIndex(tiedPlayerIndices[nextTieTurn]);
+    } else {
+      setCurrentPlayerIndex((currentPlayerIndex + 1) % updatedPlayers.length);
+    }
+
+    setCurrentQuestionIndex(nextQIndex);
+    setIsCurrentQuestionWager(false);
+    setWagerModalOpen(true);
   };
 
-  // Generalized Point & Life Adjustment
-  const awardPointsAndAdvance = (isCorrect: boolean, basePoints: number = 1, isMatchPartial: boolean = false) => {
+  // Award Points & Advance
+  const awardPointsAndAdvance = (isCorrect: boolean, basePoints: number = 1) => {
     if (isProcessingAnswer) return;
     setIsProcessingAnswer(true);
     stopTimer();
 
-    const qType = currentQuestion?.type || 'direct';
-    let earned = isCorrect ? basePoints : 0;
-    if (isCorrect && isCurrentQuestionWager) {
-      earned = basePoints * 2;
-    } else if (!isCorrect && isCurrentQuestionWager) {
-      earned = -2;
-    }
+    const activePlayer = players[currentPlayerIndex];
+    if (!activePlayer) return;
+
+    let pointsDelta = 0;
+    let newStreak = isCorrect ? activePlayer.streak + 1 : 0;
+    let newLives = activePlayer.lives;
 
     if (isCorrect) {
-      sounds.playCorrect();
+      pointsDelta = isCurrentQuestionWager ? basePoints * 2 : basePoints;
+
+      // Streak Bonus
+      if (newStreak > 0 && newStreak % 3 === 0) {
+        pointsDelta += 1;
+        sounds.playStreakBonus();
+        addToast('🔥 سلسلة ذهبية!', `حصل ${activePlayer.name} على نقطة إضافية لسلسلة ${newStreak} إجابات صحيحة!`, 'streak');
+      } else {
+        sounds.playCorrect();
+      }
     } else {
-      sounds.playWrong();
+      if (isCurrentQuestionWager) {
+        pointsDelta = -2;
+      }
+      if (gameMode === 'solo') {
+        newLives = Math.max(0, activePlayer.lives - 1);
+        sounds.playHeartLost();
+        addToast('فقدت روحاً 💔', `تبقى لديك ${newLives} أرواح`, 'danger');
+      } else {
+        sounds.playWrong();
+      }
     }
 
-    const updated = players.map((p, idx) => {
+    const updatedPlayers = players.map((p, idx) => {
       if (idx !== currentPlayerIndex) return p;
-
-      let nextStreak = p.streak;
-      let newMaxStreak = p.bestStreak;
-      let bonusPoint = 0;
-      let newLives = p.lives;
-
-      if (isCorrect) {
-        if (!isMatchPartial) {
-          nextStreak += 1;
-          newMaxStreak = Math.max(newMaxStreak, nextStreak);
-          if (nextStreak === 3) {
-            bonusPoint = 1;
-            nextStreak = 0;
-            sounds.playStreak();
-            addToast('🔥 سلسلة ذهبية!', `+1 نقطة إضافية لـ ${p.name}!`, 'streak');
-            if (gameMode === 'solo' && newLives < 5) {
-              newLives += 1;
-              addToast('❤️ استعادة روح', 'استعدت روحاً بفضل السلسلة الذهبية!', 'gold');
-            }
-          }
-        }
-      } else {
-        nextStreak = 0;
-        if (gameMode === 'solo') {
-          newLives = Math.max(0, newLives - 1);
-          sounds.playWrong();
-          addToast('💔 فقدان روح', `تبقى لديك ${newLives} أرواح!`, 'danger');
-        }
+      const newScore = Math.max(0, p.score + pointsDelta);
+      const newBest = Math.max(p.bestStreak, newStreak);
+      const newCorrectCount = isCorrect ? p.correctCount + 1 : p.correctCount;
+      const typeBreakdown = { ...p.correctByType };
+      if (isCorrect && currentQuestion) {
+        typeBreakdown[currentQuestion.type] = (typeBreakdown[currentQuestion.type] || 0) + 1;
       }
 
       return {
         ...p,
-        score: Math.max(0, Math.round((p.score + earned + bonusPoint) * 10) / 10),
-        correctCount: p.correctCount + (isCorrect ? 1 : 0),
-        streak: nextStreak,
-        bestStreak: newMaxStreak,
-        lives: newLives,
-        correctByType: {
-          ...p.correctByType,
-          [qType]: p.correctByType[qType] + (isCorrect ? 1 : 0)
-        }
+        score: newScore,
+        streak: newStreak,
+        bestStreak: newBest,
+        correctCount: newCorrectCount,
+        correctByType: typeBreakdown,
+        lives: newLives
       };
     });
 
-    setPlayers(updated);
+    setPlayers(updatedPlayers);
+    if (gameMode === 'solo') {
+      setSoloQuestionsAnswered(prev => prev + 1);
+    }
+
+    setIsAnswerRevealed(true);
 
     setTimeout(() => {
-      advanceToNext(updated);
+      advanceToNextQuestion(updatedPlayers);
     }, 1800);
   };
 
-  // Lifelines
-  const handleUseLetterLifeline = () => {
-    const p = players[currentPlayerIndex];
-    if (!p || p.lifelines.letter || usedLifelineThisQuestion || isAnswerRevealed || !currentQuestion) return;
+  // Handle MCQ Selection
+  const handleSelectMcq = (choiceIdx: number) => {
+    if (selectedChoiceIdx !== null || isProcessingAnswer || !currentQuestion) return;
+    setSelectedChoiceIdx(choiceIdx);
+    const q = currentQuestion as McqQuestion;
+    const isCorrect = choiceIdx === q.correctIndex;
+    awardPointsAndAdvance(isCorrect, 1);
+  };
 
-    sounds.playRevealLetter();
-    setUsedLifelineThisQuestion(true);
+  // Handle True / False Selection
+  const handleSelectTf = (userChoice: boolean) => {
+    if (selectedTfChoice !== null || isProcessingAnswer || !currentQuestion) return;
+    setSelectedTfChoice(userChoice);
+    const q = currentQuestion as TfQuestion;
+    const isCorrect = userChoice === q.answer;
+    awardPointsAndAdvance(isCorrect, 1);
+  };
 
-    setPlayers(prev => prev.map((pl, i) => i === currentPlayerIndex ? {
-      ...pl, lifelines: { ...pl.lifelines, letter: true }
-    } : pl));
+  // Handle Match Selection
+  const handleSelectMatchCard = (column: 'right' | 'left', idx: number) => {
+    if (matchConfirmed || isProcessingAnswer) return;
+    sounds.playClick();
 
-    if (currentQuestion.type === 'mcq') {
-      const q = currentQuestion as McqQuestion;
-      const wrongIndices = [0, 1, 2, 3].filter(i => i !== q.correctIndex);
-      const shuffledWrong = shuffleArray(wrongIndices);
-      setEliminatedChoices(shuffledWrong.slice(0, 2));
-      addToast('وسيلة مساعدة', 'تم حذف خيارين خاطئين (50:50)!', 'gold');
-    } else {
-      let targetAnswer = '';
-      if ('answer' in currentQuestion) targetAnswer = String((currentQuestion as any).answer);
-      const letterData = getFirstLetterData(targetAnswer);
-      setRevealedLetterHint(letterData.masked);
-      addToast('كشف الحرف', `الحرف الأول: ${letterData.letter} (${letterData.length} حروف)`, 'gold');
+    if (column === 'right') {
+      setSelectedRightIdx(idx);
+    } else if (column === 'left' && selectedRightIdx !== null) {
+      const palette = ['#D4AF37', '#38BDF8', '#10B981', '#C084FC'];
+      const chosenColor = palette[connections.length % palette.length];
+
+      const filtered = connections.filter(c => c.rightIdx !== selectedRightIdx && c.leftIdx !== idx);
+      const nextConnections = [...filtered, { rightIdx: selectedRightIdx, leftIdx: idx, color: chosenColor }];
+      setConnections(nextConnections);
+      setSelectedRightIdx(null);
     }
   };
 
-  const handleUseExtraTimeLifeline = () => {
-    const p = players[currentPlayerIndex];
-    if (!p || p.lifelines.extraTime || usedLifelineThisQuestion || isAnswerRevealed) return;
+  const handleConfirmMatch = () => {
+    if (connections.length < 4 || isProcessingAnswer || !currentQuestion) return;
+    setMatchConfirmed(true);
+    const q = currentQuestion as MatchQuestion;
 
+    let correctPairsCount = 0;
+    connections.forEach(conn => {
+      const rightOrig = matchRightItems[conn.rightIdx]?.origIdx;
+      const leftOrig = matchLeftItems[conn.leftIdx]?.origIdx;
+      if (rightOrig !== undefined && rightOrig === leftOrig) {
+        correctPairsCount++;
+      }
+    });
+
+    const isAllCorrect = correctPairsCount === 4;
+    awardPointsAndAdvance(isAllCorrect, 2);
+  };
+
+  // Handle Hints Next Hint
+  const handleRevealNextHint = () => {
+    if (revealedHintsCount >= 5 || isAnswerRevealed) return;
     sounds.playClick();
+    setRevealedHintsCount(prev => Math.min(5, prev + 1));
+  };
+
+  const getHintsCurrentPoints = () => {
+    const pts = [5, 4, 3, 2, 1];
+    return pts[Math.min(4, revealedHintsCount - 1)] || 1;
+  };
+
+  // Lifelines Actions
+  const handleUseLetterClue = () => {
+    if (usedLifelineThisQuestion || !currentQuestion) return;
+    const activePlayer = players[currentPlayerIndex];
+    if (!activePlayer || activePlayer.lifelines.letter) return;
+
+    sounds.playLifeline();
     setUsedLifelineThisQuestion(true);
 
-    setPlayers(prev => prev.map((pl, i) => i === currentPlayerIndex ? {
-      ...pl, lifelines: { ...pl.lifelines, extraTime: true }
-    } : pl));
+    setPlayers(prev => prev.map((p, i) => {
+      if (i !== currentPlayerIndex) return p;
+      return { ...p, lifelines: { ...p.lifelines, letter: true } };
+    }));
+
+    if (currentQuestion.type === 'mcq') {
+      const q = currentQuestion as McqQuestion;
+      const wrongIndices = [0, 1, 2, 3].filter(idx => idx !== q.correctIndex);
+      const shuffledWrongs = shuffleArray(wrongIndices);
+      setEliminatedChoices(shuffledWrongs.slice(0, 2));
+      addToast('حذف إجابتين 💡', 'تم حذف خيارين خاطئين من الخيارات!', 'gold');
+    } else if (currentQuestion.type === 'direct' || currentQuestion.type === 'fill') {
+      const targetAns = currentQuestion.type === 'direct'
+        ? (currentQuestion as DirectQuestion).answer
+        : (currentQuestion as FillQuestion).answer;
+      const clue = getFirstLetterData(targetAns);
+      setRevealedLetterHint(`${clue.masked} (${clue.length} حروف)`);
+      addToast('كشف الحرف الأول 💡', `الحرف الأول هو "${clue.letter}" (${clue.length} حروف)`, 'gold');
+    } else {
+      addToast('وسيلة المساعدة', 'تم تفعيل الوسيلة لهذا السؤال', 'gold');
+    }
+  };
+
+  const handleUseExtraTime = () => {
+    if (usedLifelineThisQuestion || !isTimerRunning) return;
+    const activePlayer = players[currentPlayerIndex];
+    if (!activePlayer || activePlayer.lifelines.extraTime) return;
+
+    sounds.playLifeline();
+    setUsedLifelineThisQuestion(true);
+
+    setPlayers(prev => prev.map((p, i) => {
+      if (i !== currentPlayerIndex) return p;
+      return { ...p, lifelines: { ...p.lifelines, extraTime: true } };
+    }));
 
     const newTime = Math.min(45, timeRemaining + 15);
     setTimeRemaining(newTime);
     timerRemainingAtStartRef.current = newTime;
     timerStartRef.current = Date.now();
-    addToast('وقت إضافي', '+15 ثانية مضافة للمؤقت!', 'gold');
+    addToast('وقت إضافي ⏱️', 'تمت إضافة 15 ثانية إلى المؤقت!', 'gold');
   };
 
-  const handleUseFriendLifeline = () => {
-    const p = players[currentPlayerIndex];
-    if (!p || p.lifelines.friend || usedLifelineThisQuestion || isAnswerRevealed) return;
+  const handleUseFriend = () => {
+    if (usedLifelineThisQuestion) return;
+    const activePlayer = players[currentPlayerIndex];
+    if (!activePlayer || activePlayer.lifelines.friend) return;
 
-    sounds.playConsultFriend();
-    pauseTimer();
+    sounds.playLifeline();
     setUsedLifelineThisQuestion(true);
 
-    setPlayers(prev => prev.map((pl, i) => i === currentPlayerIndex ? {
-      ...pl, lifelines: { ...pl.lifelines, friend: true }
-    } : pl));
+    setPlayers(prev => prev.map((p, i) => {
+      if (i !== currentPlayerIndex) return p;
+      return { ...p, lifelines: { ...p.lifelines, friend: true } };
+    }));
 
+    pauseTimer();
     setFriendTimeRemaining(20);
     setIsFriendModalOpen(true);
   };
 
+  // Friend Timer interval
   useEffect(() => {
     if (!isFriendModalOpen) return;
     const interval = window.setInterval(() => {
       setFriendTimeRemaining(prev => {
         if (prev <= 1) {
           window.clearInterval(interval);
+          sounds.playTimeout();
           setIsFriendModalOpen(false);
           resumeTimer();
           return 0;
         }
+        sounds.playTick(false);
         return prev - 1;
       });
     }, 1000);
+
     return () => window.clearInterval(interval);
   }, [isFriendModalOpen, resumeTimer]);
 
+  // Handle Skip
   const handleSkipQuestion = () => {
-    const p = players[currentPlayerIndex];
-    if (!p || p.skips >= 2 || isProcessingAnswer) return;
+    const activePlayer = players[currentPlayerIndex];
+    if (!activePlayer || activePlayer.skips >= 2 || isProcessingAnswer) return;
+
     sounds.playClick();
-
-    const updated = players.map((pl, i) => i === currentPlayerIndex ? { ...pl, skips: pl.skips + 1 } : pl);
-    setPlayers(updated);
-    advanceToNext(updated);
-  };
-
-  // MCQ Selection
-  const handleSelectMcq = (idx: number) => {
-    if (selectedChoiceIdx !== null || isProcessingAnswer || !currentQuestion) return;
-    const q = currentQuestion as McqQuestion;
-    setSelectedChoiceIdx(idx);
     stopTimer();
-    const isCorrect = idx === q.correctIndex;
-    setIsAnswerRevealed(true);
-    awardPointsAndAdvance(isCorrect, 1);
-  };
 
-  // TF Selection
-  const handleSelectTf = (val: boolean) => {
-    if (selectedTfChoice !== null || isProcessingAnswer || !currentQuestion) return;
-    const q = currentQuestion as TfQuestion;
-    setSelectedTfChoice(val);
-    stopTimer();
-    const isCorrect = val === q.answer;
-    setIsAnswerRevealed(true);
-    awardPointsAndAdvance(isCorrect, 1);
-  };
-
-  // Match
-  const handleSelectMatchCard = (side: 'right' | 'left', idx: number) => {
-    if (matchConfirmed || isProcessingAnswer) return;
-    sounds.playClick();
-    const existingIdx = connections.findIndex(c => 
-      (side === 'right' && c.rightIdx === idx) || (side === 'left' && c.leftIdx === idx)
-    );
-    if (existingIdx !== -1) {
-      setConnections(prev => prev.filter((_, i) => i !== existingIdx));
-      setSelectedRightIdx(null);
-      return;
-    }
-    if (side === 'right') {
-      setSelectedRightIdx(idx);
-    } else if (side === 'left' && selectedRightIdx !== null) {
-      const colors = ['#D4AF37', '#10B981', '#38BDF8', '#A855F7'];
-      const usedColors = connections.map(c => c.color);
-      const color = colors.find(c => !usedColors.includes(c)) || '#D4AF37';
-      setConnections(prev => [...prev, { rightIdx: selectedRightIdx, leftIdx: idx, color }]);
-      setSelectedRightIdx(null);
-    }
-  };
-
-  const handleConfirmMatch = () => {
-    if (matchConfirmed || isProcessingAnswer || !currentQuestion) return;
-    setMatchConfirmed(true);
-    stopTimer();
-    let correctCount = 0;
-    connections.forEach(conn => {
-      const rOrig = matchRightItems[conn.rightIdx]?.origIdx;
-      const lOrig = matchLeftItems[conn.leftIdx]?.origIdx;
-      if (rOrig === lOrig) correctCount++;
+    const updated = players.map((p, i) => {
+      if (i !== currentPlayerIndex) return p;
+      return { ...p, skips: p.skips + 1 };
     });
-    let earned = 0;
-    let isCorrectOverall = false;
-    let isPartial = false;
-    if (correctCount === 4) {
-      earned = 1;
-      isCorrectOverall = true;
-    } else if (correctCount === 3) {
-      earned = 0.5;
-      isCorrectOverall = true;
-      isPartial = true;
-    }
-    setIsAnswerRevealed(true);
-    awardPointsAndAdvance(isCorrectOverall, earned, isPartial);
+    setPlayers(updated);
+
+    addToast('تخطي السؤال ⏭️', `استخدم ${activePlayer.name} فرصة التخطي (${activePlayer.skips + 1}/2)`, 'info');
+    advanceToNextQuestion(updated);
   };
 
-  // Hints
-  const handleRevealNextHint = () => {
-    sounds.playClick();
-    setRevealedHintsCount(prev => Math.min(5, prev + 1));
+  const activePlayer = players[currentPlayerIndex] || {
+    name: 'لاعب 1', score: 0, streak: 0, colorIndex: 0, lifelines: initialLifelines, bets: 0, skips: 0, lives: 5
   };
+  const activeTheme = getPlayerTheme(activePlayer.colorIndex);
 
-  const getHintsCurrentPoints = () => Math.max(1, 6 - revealedHintsCount);
-
-  const activePlayer = players[currentPlayerIndex] || players[0];
-  const activeColor = PLAYER_COLORS[activePlayer?.colorIndex || 0] || PLAYER_COLORS[0];
-
-  // Render Universal Theme Switcher Popover Component
+  // Render Luxury Theme Switcher Dropdown (Separated Mode & Accent)
   const renderThemeButton = () => (
     <div className="relative" ref={themePopoverRef}>
       <button
-        onClick={() => {
-          sounds.playClick();
-          setIsThemePopoverOpen(prev => !prev);
-        }}
-        aria-expanded={isThemePopoverOpen}
-        aria-label="تغيير الثيم (اختصار T)"
-        className="p-2 rounded-xl bg-[#12121A] border border-slate-800 text-slate-300 hover:text-[#F5D77A] hover:border-[#D4AF37]/40 transition-all cursor-pointer flex items-center gap-1.5"
-        title="تغيير المظهر والثيم (اختصار T)"
+        onClick={() => setIsThemePopoverOpen(!isThemePopoverOpen)}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-xl glass-panel text-xs font-semibold hover:border-[var(--accent-primary)] transition-all cursor-pointer"
+        title="تخصيص المظهر والألوان (اختصار T)"
+        aria-label="تخصيص المظهر"
       >
-        <Palette className="w-4 h-4 text-[#D4AF37]" />
-        <span className="text-[11px] font-bold hidden sm:inline">
-          {currentTheme === 'gold' ? 'ذهبي' : currentTheme === 'royal-blue' ? 'أزرق' : currentTheme === 'emerald' ? 'زمردي' : 'تلقائي'}
-        </span>
+        <Palette className="w-4 h-4 text-[var(--accent-primary)]" />
+        <span className="hidden sm:inline">المظهر</span>
       </button>
 
       {isThemePopoverOpen && (
-        <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-48 p-2 rounded-2xl bg-[#0E0E16]/95 border border-[#D4AF37]/40 backdrop-blur-xl shadow-2xl z-50 animate-in fade-in zoom-in-95">
-          <div className="text-[10px] text-slate-400 px-2 py-1 font-bold border-b border-slate-800 mb-1 flex items-center justify-between">
-            <span>اختر الثيم</span>
-            <span className="text-[#F5D77A]">اختصار: T</span>
+        <div className="absolute left-0 mt-2 w-64 glass-panel p-4 rounded-2xl shadow-2xl border border-[var(--border-accent)] z-50 animate-in fade-in zoom-in-95">
+          <div className="text-xs font-bold text-[var(--accent-light)] mb-3 pb-2 border-b border-[var(--border-subtle)] flex items-center justify-between">
+            <span>تخصيص المظهر والألوان</span>
+            <span className="text-[10px] text-[var(--text-muted)] font-normal">زر (T)</span>
           </div>
-          <div className="space-y-1">
-            {[
-              { id: 'gold', name: 'الذهبي الأسود', color: 'from-[#F5D77A] to-[#B8902B]' },
-              { id: 'royal-blue', name: 'الأزرق الملكي', color: 'from-[#6C8CFF] to-[#3B62E0]' },
-              { id: 'emerald', name: 'الزمردي الأخضر', color: 'from-[#2ECC9A] to-[#1B8E68]' },
-              { id: 'auto', name: 'تلقائي (حسب النظام)', color: 'from-slate-400 to-slate-700' }
-            ].map(t => {
-              const isSelected = currentTheme === t.id;
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => {
-                    sounds.playClick();
-                    applyTheme(t.id as ThemeType);
-                    setIsThemePopoverOpen(false);
-                  }}
-                  className={`w-full p-2 rounded-xl flex items-center justify-between text-xs font-semibold transition-all cursor-pointer ${
-                    isSelected ? 'bg-[#1E1E2D] text-[#F5D77A] font-bold' : 'hover:bg-slate-800/60 text-slate-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className={`w-3.5 h-3.5 rounded-full bg-gradient-to-tr ${t.color} border border-white/20`} />
-                    <span>{t.name}</span>
-                  </div>
-                  {isSelected && <span className="text-[#D4AF37] font-bold">✓</span>}
-                </button>
-              );
-            })}
+
+          {/* 1) Color Mode Selection (Light / Dark / Auto) */}
+          <div className="mb-4">
+            <span className="text-[11px] font-bold text-[var(--text-muted)] block mb-2">
+              وضع العرض (Mode):
+            </span>
+            <div className="grid grid-cols-3 gap-1.5">
+              {[
+                { id: 'dark', label: 'داكن', icon: <Moon className="w-3.5 h-3.5" /> },
+                { id: 'light', label: 'فاتح', icon: <Sun className="w-3.5 h-3.5" /> },
+                { id: 'auto', label: 'تلقائي', icon: <Laptop className="w-3.5 h-3.5" /> },
+              ].map(item => {
+                const isSelected = colorMode === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      sounds.playClick();
+                      setColorMode(item.id as ColorMode);
+                    }}
+                    className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-[var(--accent-primary)] text-[var(--accent-contrast)] shadow-md'
+                        : 'bg-[var(--bg-button-neutral)] hover:bg-[var(--bg-button-neutral-hover)] text-[var(--text-secondary)]'
+                    }`}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 2) Accent Color Selection (Gold / Royal Blue / Emerald) */}
+          <div>
+            <span className="text-[11px] font-bold text-[var(--text-muted)] block mb-2">
+              لون التمييز (Accent):
+            </span>
+            <div className="space-y-1.5">
+              {[
+                { id: 'gold', name: 'الذهبي الفاخر (Gold)', color: 'from-[#F5D77A] to-[#B8902B]' },
+                { id: 'royal-blue', name: 'الأزرق الملكي (Royal)', color: 'from-[#6C8CFF] to-[#1D4ED8]' },
+                { id: 'emerald', name: 'الزمردي النقي (Emerald)', color: 'from-[#6EE7B7] to-[#047857]' },
+              ].map(acc => {
+                const isSelected = accentColor === acc.id;
+                return (
+                  <button
+                    key={acc.id}
+                    onClick={() => {
+                      sounds.playClick();
+                      setAccentColor(acc.id as AccentColor);
+                    }}
+                    className={`w-full p-2 rounded-xl flex items-center justify-between text-xs font-semibold transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-[var(--bg-button-neutral-hover)] border border-[var(--border-accent)] text-[var(--accent-light)] font-bold'
+                        : 'hover:bg-[var(--bg-button-neutral)] text-[var(--text-secondary)]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className={`w-3.5 h-3.5 rounded-full bg-gradient-to-tr ${acc.color} border border-white/20`} />
+                      <span>{acc.name}</span>
+                    </div>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-[var(--accent-primary)]" />}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
@@ -1131,14 +1215,9 @@ export default function App() {
   );
 
   return (
-    <div className="relative min-h-screen bg-[#07070B] text-slate-100 font-sans flex flex-col justify-between overflow-x-hidden selection:bg-[#D4AF37]/30 selection:text-white transition-colors duration-400">
+    <div className="relative min-h-screen text-[var(--text-main)] font-sans flex flex-col justify-between overflow-x-hidden transition-colors duration-300">
       {/* Background Geometric Pattern */}
-      <div 
-        className="fixed inset-0 pointer-events-none opacity-[0.03] z-0"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23D4AF37' fill-rule='evenodd'%3E%3Cpath d='M40 0l10 10-10 10-10-10L40 0zm0 40l10 10-10 10-10-10L40 40zm-20-20l10 10-10 10-10-10L20 20zm40 0l10 10-10 10-10-10L60 20zM0 0h20v20H0V0zm60 0h20v20H60V0zM0 60h20v20H0V60zm60 0h20v20H60V60z'/%3E%3C/g%3E%3C/svg%3E")`
-        }}
-      />
+      <div className="bg-pattern" />
 
       {/* Floating Interactive Toast Notifications */}
       <div className="fixed top-4 left-4 right-4 z-50 pointer-events-none flex flex-col items-center gap-2">
@@ -1147,16 +1226,16 @@ export default function App() {
             key={toast.id}
             className={`pointer-events-auto px-5 py-3 rounded-2xl shadow-2xl border backdrop-blur-xl flex items-center gap-3 transition-all transform animate-in fade-in slide-in-from-top-4 duration-300 ${
               toast.type === 'streak' 
-                ? 'bg-gradient-to-r from-amber-500/90 to-yellow-600/90 border-amber-300 text-slate-950 font-bold gold-glow' 
+                ? 'bg-gradient-to-r from-amber-500/90 to-yellow-600/90 border-amber-300 text-slate-950 font-bold accent-glow' 
                 : toast.type === 'wager'
                 ? 'bg-gradient-to-r from-purple-900/90 to-indigo-900/90 border-purple-400 text-white'
                 : toast.type === 'danger'
                 ? 'bg-rose-950/90 border-rose-500 text-rose-200'
-                : 'bg-[#12121A]/90 border-[#D4AF37]/40 text-[#F5D77A] gold-glow'
+                : 'glass-card border-[var(--border-accent)] text-[var(--accent-light)] accent-glow'
             }`}
           >
             {toast.type === 'streak' && <Flame className="w-5 h-5 fill-slate-950 animate-bounce" />}
-            {toast.type === 'gold' && <Sparkles className="w-5 h-5 text-[#F5D77A]" />}
+            {toast.type === 'gold' && <Sparkles className="w-5 h-5 text-[var(--accent-primary)]" />}
             {toast.type === 'wager' && <Zap className="w-5 h-5 text-yellow-300" />}
             {toast.type === 'danger' && <HeartCrack className="w-5 h-5 text-rose-400" />}
             <div>
@@ -1175,22 +1254,22 @@ export default function App() {
           <div className="w-full flex items-center justify-between pb-6">
             <div className="flex items-center gap-2">
               <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20" />
-              <span className="text-xs text-slate-400 font-medium">النسخة الثقافية المطوّرة (أنماط 1 إلى 4 لاعبين)</span>
+              <span className="text-xs text-[var(--text-muted)] font-medium">النسخة الثقافية المطوّرة (أنماط 1 إلى 4 لاعبين)</span>
             </div>
             <div className="flex items-center gap-2.5">
               {renderThemeButton()}
               <button
                 onClick={() => handleShareGame()}
-                className="p-2 rounded-xl bg-[#12121A] border border-slate-800 text-slate-300 hover:text-[#F5D77A] hover:border-[#D4AF37]/40 transition-all cursor-pointer flex items-center gap-1.5"
+                className="p-2 rounded-xl glass-panel text-[var(--text-secondary)] hover:text-[var(--accent-light)] hover:border-[var(--border-accent)] transition-all cursor-pointer flex items-center gap-1.5"
                 title="شارك اللعبة"
               >
-                <Share2 className="w-4 h-4 text-[#D4AF37]" />
+                <Share2 className="w-4 h-4 text-[var(--accent-primary)]" />
                 <span className="text-xs font-bold hidden sm:inline">شارك اللعبة</span>
               </button>
               {installPrompt && (
                 <button
                   onClick={handleInstallApp}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#F5D77A] hover:bg-[#D4AF37]/25 text-xs font-bold transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--player-1-bg)] border border-[var(--border-accent)] text-[var(--accent-light)] text-xs font-bold transition-all cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>تثبيت PWA</span>
@@ -1198,7 +1277,7 @@ export default function App() {
               )}
               <button
                 onClick={handleToggleMute}
-                className="p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+                className="p-2 rounded-xl glass-panel text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors cursor-pointer"
                 title={isMuted ? 'تشغيل الصوت' : 'كتم الصوت'}
               >
                 {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
@@ -1206,38 +1285,38 @@ export default function App() {
             </div>
           </div>
 
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#12121A] border border-[#D4AF37]/30 text-xs font-semibold text-[#F5D77A] mb-6 gold-glow">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-card text-xs font-semibold text-[var(--accent-light)] mb-6 accent-glow">
             <Sparkles className="w-3.5 h-3.5" />
             <span>فردي بأرواح · فريقان · 3 لاعبين · 4 لاعبين · 6 أنماط أسئلة</span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-extrabold font-display tracking-tight gold-text-gradient mb-4">
+          <h1 className="text-5xl md:text-7xl font-extrabold font-display tracking-tight accent-gradient-text mb-4">
             تحدي الثلاثين
           </h1>
-          <p className="text-base md:text-xl text-slate-300 max-w-2xl mb-8 leading-relaxed font-sans">
+          <p className="text-base md:text-xl text-[var(--text-secondary)] max-w-2xl mb-8 leading-relaxed font-sans">
             لعبة المسابقات الفكرية والثقافية الكبرى: خيارات، صح وخطأ، أكمل الناقص، مطابقة، وتلميحات تدريجية.
           </p>
 
           {/* Quick Metrics & Solo Record */}
           <div className="grid grid-cols-3 gap-3 md:gap-6 w-full max-w-lg mb-6">
-            <div className="glass-card p-4 rounded-2xl border border-[#D4AF37]/20 flex flex-col items-center">
-              <span className="text-3xl font-bold font-display text-[#F5D77A]">30</span>
-              <span className="text-xs text-slate-400 mt-1 font-medium">نقطة للانتصار</span>
+            <div className="glass-card p-4 rounded-2xl flex flex-col items-center">
+              <span className="text-3xl font-bold font-display text-[var(--accent-light)]">30</span>
+              <span className="text-xs text-[var(--text-muted)] mt-1 font-medium">نقطة للانتصار</span>
             </div>
-            <div className="glass-card p-4 rounded-2xl border border-[#D4AF37]/20 flex flex-col items-center">
-              <span className="text-3xl font-bold font-display text-[#F5D77A]">1 - 4</span>
-              <span className="text-xs text-slate-400 mt-1 font-medium">لاعبين وفرق</span>
+            <div className="glass-card p-4 rounded-2xl flex flex-col items-center">
+              <span className="text-3xl font-bold font-display text-[var(--accent-light)]">1 - 4</span>
+              <span className="text-xs text-[var(--text-muted)] mt-1 font-medium">لاعبين وفرق</span>
             </div>
-            <div className="glass-card p-4 rounded-2xl border border-[#D4AF37]/20 flex flex-col items-center">
-              <span className="text-3xl font-bold font-display text-[#F5D77A]">6</span>
-              <span className="text-xs text-slate-400 mt-1 font-medium">أنماط تفاعلية</span>
+            <div className="glass-card p-4 rounded-2xl flex flex-col items-center">
+              <span className="text-3xl font-bold font-display text-[var(--accent-light)]">6</span>
+              <span className="text-xs text-[var(--text-muted)] mt-1 font-medium">أنماط تفاعلية</span>
             </div>
           </div>
 
           {/* Solo Best Record Display if exists */}
           {soloRecord && (
-            <div className="mb-8 p-3 px-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-[#F5D77A]" />
+            <div className="mb-8 p-3 px-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-500 dark:text-amber-300 flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-[var(--accent-primary)]" />
               <span>
                 الرقم القياسي الفردي: <strong>30 نقطة</strong> في <strong>{soloRecord.questionsCount} سؤالاً</strong> ({soloRecord.timeSeconds} ثانية)
               </span>
@@ -1251,9 +1330,9 @@ export default function App() {
                 sounds.playClick();
                 setCurrentScreen('SETUP');
               }}
-              className="flex-1 flex items-center justify-center gap-3 py-4 px-8 rounded-2xl font-bold text-slate-950 bg-gradient-to-r from-[#F5D77A] via-[#D4AF37] to-[#B8902B] hover:brightness-110 active:scale-[0.98] transition-all shadow-xl gold-glow cursor-pointer font-display text-lg"
+              className="flex-1 flex items-center justify-center gap-3 py-4 px-8 rounded-2xl font-bold btn-accent cursor-pointer font-display text-lg"
             >
-              <Play className="w-5 h-5 fill-slate-950" />
+              <Play className="w-5 h-5 fill-current" />
               <span>دخول التحدي</span>
             </button>
             <button
@@ -1261,9 +1340,9 @@ export default function App() {
                 sounds.playClick();
                 setIsRulesModalOpen(true);
               }}
-              className="flex items-center justify-center gap-2 py-4 px-6 rounded-2xl font-semibold text-slate-200 bg-[#12121A] hover:bg-[#1A1A26] border border-slate-800 hover:border-[#D4AF37]/40 transition-all cursor-pointer text-sm"
+              className="flex items-center justify-center gap-2 py-4 px-6 rounded-2xl font-semibold text-[var(--text-secondary)] glass-panel hover:border-[var(--border-accent)] transition-all cursor-pointer text-sm"
             >
-              <Award className="w-4 h-4 text-[#D4AF37]" />
+              <Award className="w-4 h-4 text-[var(--accent-primary)]" />
               <span>قواعد وأنماط اللعب</span>
             </button>
           </div>
@@ -1275,12 +1354,12 @@ export default function App() {
       {/* ========================================================= */}
       {currentScreen === 'SETUP' && (
         <div className="relative z-10 flex-1 flex flex-col justify-center max-w-4xl mx-auto w-full p-4 md:p-6">
-          <div className="glass-card p-6 md:p-8 rounded-3xl border border-[#D4AF37]/25 gold-glow shadow-2xl">
+          <div className="glass-card p-6 md:p-8 rounded-3xl accent-glow">
             {/* Header */}
-            <div className="flex items-center justify-between pb-6 mb-6 border-b border-[#D4AF37]/20">
+            <div className="flex items-center justify-between pb-6 mb-6 border-b border-[var(--border-subtle)]">
               <div className="flex items-center gap-3">
-                <Settings className="w-6 h-6 text-[#D4AF37]" />
-                <h2 className="text-2xl font-bold font-display gold-text-gradient">
+                <Settings className="w-6 h-6 text-[var(--accent-primary)]" />
+                <h2 className="text-2xl font-bold font-display accent-gradient-text">
                   إعدادات التحدي
                 </h2>
               </div>
@@ -1288,10 +1367,10 @@ export default function App() {
                 {renderThemeButton()}
                 <button
                   onClick={() => handleShareGame()}
-                  className="p-2 rounded-xl bg-[#12121A] border border-slate-800 text-slate-300 hover:text-[#F5D77A] transition-all cursor-pointer flex items-center gap-1.5"
+                  className="p-2 rounded-xl glass-panel text-[var(--text-secondary)] hover:text-[var(--accent-light)] transition-all cursor-pointer flex items-center gap-1.5"
                   title="شارك اللعبة"
                 >
-                  <Share2 className="w-4 h-4 text-[#D4AF37]" />
+                  <Share2 className="w-4 h-4 text-[var(--accent-primary)]" />
                   <span className="text-xs font-semibold hidden md:inline">شارك</span>
                 </button>
                 <button
@@ -1299,7 +1378,7 @@ export default function App() {
                     sounds.playClick();
                     setCurrentScreen('SPLASH');
                   }}
-                  className="px-3 py-1.5 rounded-xl border border-slate-800 text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl glass-panel text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors cursor-pointer"
                 >
                   العودة للرئيسية
                 </button>
@@ -1308,7 +1387,7 @@ export default function App() {
 
             {/* 1) PLAYER COUNT SELECTION: 4 Luxury Glass Cards */}
             <div className="mb-6">
-              <label className="block text-xs font-bold text-[#F5D77A] mb-2.5">
+              <label className="block text-xs font-bold text-[var(--accent-light)] mb-2.5">
                 نمط وعدد اللاعبين:
               </label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -1328,18 +1407,18 @@ export default function App() {
                       }}
                       className={`p-3.5 rounded-2xl border flex flex-col items-center text-center gap-2 cursor-pointer transition-all ${
                         isSelected 
-                          ? 'bg-[#181824] border-[#D4AF37] gold-glow' 
-                          : 'bg-[#0E0E16]/80 border-slate-800 opacity-60 hover:opacity-90'
+                          ? 'border-[var(--accent-primary)] bg-[var(--player-1-bg)] accent-glow' 
+                          : 'glass-panel opacity-70 hover:opacity-100'
                       }`}
                     >
-                      <div className={`p-2 rounded-xl ${isSelected ? 'bg-[#D4AF37] text-slate-950' : 'bg-black/40 text-slate-400'}`}>
+                      <div className={`p-2 rounded-xl ${isSelected ? 'bg-[var(--accent-primary)] text-[var(--accent-contrast)]' : 'bg-black/20 dark:bg-black/40 text-[var(--text-muted)]'}`}>
                         {mode.icon}
                       </div>
                       <div>
-                        <span className={`text-sm font-bold block ${isSelected ? 'text-[#F5D77A]' : 'text-slate-200'}`}>
+                        <span className={`text-sm font-bold block ${isSelected ? 'text-[var(--accent-light)]' : 'text-[var(--text-main)]'}`}>
                           {mode.name}
                         </span>
-                        <span className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">
+                        <span className="text-[10px] text-[var(--text-muted)] line-clamp-1 mt-0.5">
                           {mode.desc}
                         </span>
                       </div>
@@ -1349,31 +1428,165 @@ export default function App() {
               </div>
             </div>
 
-            {/* 2) DYNAMIC PLAYER NAMES */}
+            {/* 2) DYNAMIC PLAYER NAMES INPUTS */}
             <div className="mb-6">
-              <label className="block text-xs font-bold text-slate-300 mb-2">
-                {gameMode === 'solo' ? 'اسم المتحدي:' : 'أسماء اللاعبين / الفرق:'}
+              <label className="block text-xs font-bold text-[var(--accent-light)] mb-2.5">
+                {gameMode === 'solo' ? 'اسم المغامر:' : 'أسماء الفرق واللاعبين:'}
               </label>
-              <div className={`grid gap-3 ${gameMode === 'solo' ? 'grid-cols-1' : gameMode === 'duo' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2'}`}>
+              <div className={`grid gap-3 ${
+                gameMode === 'solo' ? 'grid-cols-1 max-w-sm' :
+                gameMode === 'duo' ? 'grid-cols-1 sm:grid-cols-2' :
+                gameMode === 'trio' ? 'grid-cols-1 sm:grid-cols-3' :
+                'grid-cols-1 sm:grid-cols-2 md:grid-cols-4'
+              }`}>
                 {Array.from({ length: getPlayerCount(gameMode) }).map((_, idx) => {
-                  const color = PLAYER_COLORS[idx];
+                  const theme = getPlayerTheme(idx);
                   return (
-                    <div key={idx} className="relative flex items-center">
-                      <div 
-                        className="absolute right-3 w-3 h-3 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: color.hex }}
-                        title={`لون: ${color.name}`}
-                      />
-                      <input
-                        type="text"
-                        maxLength={16}
-                        value={playerNames[idx] || ''}
-                        onChange={e => handlePlayerNameChange(idx, e.target.value)}
-                        className={`w-full bg-[#101018] border ${color.border} rounded-xl pr-9 pl-12 py-2.5 text-sm text-slate-100 outline-none transition-colors`}
-                        placeholder={gameMode === 'solo' ? 'المغامر' : `لاعب ${idx + 1}`}
-                      />
-                      <span className="absolute left-3 text-[10px] text-slate-500">
-                        {(playerNames[idx] || '').length}/16
+                    <div key={idx} className="relative">
+                      <div className="flex items-center gap-2 p-2.5 rounded-2xl glass-panel border" style={{ borderColor: theme.varBorder }}>
+                        <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold font-display" style={theme.styleBadge}>
+                          {idx + 1}
+                        </span>
+                        <input
+                          type="text"
+                          value={playerNames[idx] || ''}
+                          onChange={(e) => handlePlayerNameChange(idx, e.target.value)}
+                          placeholder={`اسم لاعب ${idx + 1}`}
+                          className="bg-transparent border-none outline-none text-xs md:text-sm font-semibold flex-1 text-[var(--text-main)] placeholder-[var(--text-muted)]"
+                          maxLength={16}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 3) MULTIPLAYER RULES & STARTING TURN (Multiplayer only) */}
+            {gameMode !== 'solo' && (
+              <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Starting player mode */}
+                <div className="p-3.5 rounded-2xl glass-panel flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Shuffle className="w-4 h-4 text-[var(--accent-primary)]" />
+                    <div>
+                      <span className="text-xs font-bold text-[var(--text-main)] block">من يبدأ الدور أولاً؟</span>
+                      <span className="text-[10px] text-[var(--text-muted)]">
+                        {startingTurnMode === 'random' ? 'قرعة عشوائية مشوقة' : 'الترتيب المتتابع (اللاعب 1)'}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      sounds.playClick();
+                      setStartingTurnMode(prev => prev === 'random' ? 'sequential' : 'random');
+                    }}
+                    className="px-3 py-1 rounded-xl text-xs font-bold border border-[var(--border-accent)] bg-[var(--bg-button-neutral)] hover:bg-[var(--bg-button-neutral-hover)] cursor-pointer text-[var(--accent-light)]"
+                  >
+                    {startingTurnMode === 'random' ? '🎲 قرعة' : '🔢 تتابع'}
+                  </button>
+                </div>
+
+                {/* Round completion rule */}
+                <div className="p-3.5 rounded-2xl glass-panel flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-bold text-[var(--text-main)] block">تكافؤ الفرص (إكمال الجولة)</span>
+                    <span className="text-[10px] text-[var(--text-muted)]">
+                      {roundCompletionEnabled ? 'إتاحة فرصة الرد لبقية اللاعبين' : 'فوز فوري عند وصول 30'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      sounds.playClick();
+                      setRoundCompletionEnabled(prev => !prev);
+                    }}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold border cursor-pointer transition-all ${
+                      roundCompletionEnabled 
+                        ? 'border-emerald-500 bg-emerald-500/20 text-emerald-400' 
+                        : 'border-[var(--border-subtle)] text-[var(--text-muted)]'
+                    }`}
+                  >
+                    {roundCompletionEnabled ? 'مفعّل ✓' : 'معطّل'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 4) QUESTION BANK STATUS & ANTI-REPETITION (التعديل 2) */}
+            <div className="mb-6 p-4 rounded-2xl glass-panel border border-[var(--border-accent)] flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-[var(--player-1-bg)] text-[var(--accent-primary)]">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-[var(--text-main)]">سجل الأسئلة وتجنب التكرار:</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--player-1-bg)] text-[var(--accent-light)] border border-[var(--border-accent)]">
+                      {QUESTIONS_BANK.length} سؤالاً موثقاً
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-[var(--text-muted)] mt-0.5">
+                    تم استعراض <strong>{seenQuestionIds.length}</strong> من إجمالي <strong>{QUESTIONS_BANK.length}</strong> سؤالاً على هذا المتصفح ({Math.round((seenQuestionIds.length / QUESTIONS_BANK.length) * 100)}%).
+                    {seenQuestionIds.length > 0 && ' يتم اختيار الأسئلة غير المستعرضة أولاً.'}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={resetSeenQuestions}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border border-rose-500/40 bg-rose-500/10 text-rose-500 dark:text-rose-300 hover:bg-rose-500/20 cursor-pointer transition-all flex-shrink-0"
+                title="تصفير سجل الأسئلة لبدء دورة جديدة من الصفر"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>تصفير سجل الأسئلة</span>
+              </button>
+            </div>
+
+            {/* 5) QUESTION MODES TOGGLES */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2.5">
+                <label className="text-xs font-bold text-[var(--accent-light)] flex items-center gap-1.5">
+                  <span>أنماط الأسئلة المفعّلة:</span>
+                  <span className="text-[10px] text-[var(--text-muted)] font-normal">({enabledModes.length}/6)</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={selectAllModes}
+                    className="text-[11px] font-semibold text-[var(--accent-primary)] hover:underline cursor-pointer"
+                  >
+                    تفعيل الكل
+                  </button>
+                  <span className="text-[var(--text-muted)]">·</span>
+                  <button
+                    onClick={selectOnlyDirect}
+                    className="text-[11px] font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
+                  >
+                    مباشر فقط
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
+                {QUESTION_MODES.map(mode => {
+                  const isEnabled = enabledModes.includes(mode.id);
+                  return (
+                    <div
+                      key={mode.id}
+                      onClick={() => toggleMode(mode.id)}
+                      className={`p-3 rounded-2xl border flex flex-col items-center text-center gap-1.5 cursor-pointer transition-all ${
+                        isEnabled
+                          ? 'border-[var(--accent-primary)] bg-[var(--player-1-bg)]'
+                          : 'glass-panel opacity-40 hover:opacity-75'
+                      }`}
+                    >
+                      <div className="p-1.5 rounded-lg bg-black/20 dark:bg-black/40">
+                        {MODE_ICON_MAP[mode.id]}
+                      </div>
+                      <span className={`text-xs font-bold ${isEnabled ? 'text-[var(--accent-light)]' : 'text-[var(--text-muted)]'}`}>
+                        {mode.shortName}
+                      </span>
+                      <span className="text-[9px] text-[var(--text-muted)] line-clamp-1">
+                        {mode.badge}
                       </span>
                     </div>
                   );
@@ -1381,64 +1594,91 @@ export default function App() {
               </div>
             </div>
 
-            {/* 3) STARTING TURN & ROUND COMPLETION (For multiplayer) */}
-            {gameMode !== 'solo' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-3.5 rounded-2xl bg-[#0B0B12] border border-slate-800">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-2">
-                    قرعة ضربة البداية:
-                  </label>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => { sounds.playClick(); setStartingTurnMode('random'); }}
-                      className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                        startingTurnMode === 'random' ? 'bg-[#D4AF37] text-slate-950 border-[#D4AF37]' : 'bg-[#101018] text-slate-400 border-slate-800'
-                      }`}
-                    >
-                      <Shuffle className="w-3.5 h-3.5" />
-                      <span>قرعة عشوائية</span>
-                    </button>
-                    <button
-                      onClick={() => { sounds.playClick(); setStartingTurnMode('sequential'); }}
-                      className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                        startingTurnMode === 'sequential' ? 'bg-[#D4AF37] text-slate-950 border-[#D4AF37]' : 'bg-[#101018] text-slate-400 border-slate-800'
-                      }`}
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>بالترتيب (1 فالأول)</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex flex-col justify-center">
-                  <label 
-                    onClick={() => {
-                      sounds.playClick();
-                      setRoundCompletionEnabled(prev => !prev);
-                    }}
-                    className="flex items-center gap-2.5 cursor-pointer"
+            {/* 6) CATEGORIES SELECTION */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2.5">
+                <label className="text-xs font-bold text-[var(--accent-light)] flex items-center gap-1.5">
+                  <span>التصنيفات الثقافية:</span>
+                  <span className="text-[10px] text-[var(--text-muted)] font-normal">({selectedCategories.length}/10)</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={selectAllCategories}
+                    className="text-[11px] font-semibold text-[var(--accent-primary)] hover:underline cursor-pointer"
                   >
-                    <div className={`w-5 h-5 rounded-md border flex items-center justify-center text-xs font-black ${
-                      roundCompletionEnabled ? 'bg-[#D4AF37] border-[#D4AF37] text-slate-950' : 'border-slate-700 bg-transparent'
-                    }`}>
-                      {roundCompletionEnabled ? '✓' : ''}
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-slate-200 block">إكمال الجولة بالتساوي</span>
-                      <span className="text-[10px] text-slate-400 block">ضمان تساوي عدد الأسئلة للجميع قبل إعلان الفائز</span>
-                    </div>
-                  </label>
+                    اختيار الكل
+                  </button>
+                  <span className="text-[var(--text-muted)]">·</span>
+                  <button
+                    onClick={selectRandomCategories}
+                    className="text-[11px] font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
+                  >
+                    5 عشوائية
+                  </button>
                 </div>
               </div>
-            )}
 
-            {/* Target Score & Difficulty */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {CATEGORIES.map(cat => {
+                  const isSelected = selectedCategories.includes(cat.id);
+                  return (
+                    <div
+                      key={cat.id}
+                      onClick={() => toggleCategory(cat.id)}
+                      className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer transition-all ${
+                        isSelected 
+                          ? 'border-[var(--accent-primary)] bg-[var(--player-1-bg)]' 
+                          : 'glass-panel opacity-40 hover:opacity-75'
+                      }`}
+                    >
+                      <div className="p-1 rounded bg-black/20 dark:bg-black/40">
+                        {CATEGORY_ICON_MAP[cat.id]}
+                      </div>
+                      <span className={`text-xs font-semibold truncate ${isSelected ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)]'}`}>
+                        {cat.name}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 7) DIFFICULTY & TARGET SCORE */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-2">
-                  هدف الفوز بالنقاط
+                <label className="block text-xs font-bold text-[var(--accent-light)] mb-2">
+                  مستوى الصعوبة:
                 </label>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[
+                    { id: 'all', label: 'الكل' },
+                    { id: 'easy', label: 'سهل' },
+                    { id: 'medium', label: 'متوسط' },
+                    { id: 'hard', label: 'صعب' },
+                  ].map(d => (
+                    <button
+                      key={d.id}
+                      onClick={() => {
+                        sounds.playClick();
+                        setSelectedDifficulty(d.id as DifficultyFilter);
+                      }}
+                      className={`py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                        selectedDifficulty === d.id
+                          ? 'border-[var(--accent-primary)] bg-[var(--accent-primary)] text-[var(--accent-contrast)] shadow-md'
+                          : 'glass-panel text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                      }`}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[var(--accent-light)] mb-2">
+                  هدف نقاط الانتصار:
+                </label>
+                <div className="grid grid-cols-3 gap-2">
                   {[20, 30, 40].map(pts => (
                     <button
                       key={pts}
@@ -1446,10 +1686,10 @@ export default function App() {
                         sounds.playClick();
                         setTargetScore(pts);
                       }}
-                      className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                      className={`py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                         targetScore === pts
-                          ? 'bg-[#D4AF37] text-slate-950 border-[#D4AF37]'
-                          : 'bg-[#101018] text-slate-400 border-slate-800 hover:border-slate-700'
+                          ? 'border-[var(--accent-primary)] bg-[var(--accent-primary)] text-[var(--accent-contrast)] shadow-md'
+                          : 'glass-panel text-[var(--text-muted)] hover:text-[var(--text-main)]'
                       }`}
                     >
                       {pts} نقطة
@@ -1457,182 +1697,26 @@ export default function App() {
                   ))}
                 </div>
               </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-2">
-                  مستوى الصعوبة
-                </label>
-                <div className="flex gap-2">
-                  {(['all', 'easy', 'medium', 'hard'] as DifficultyFilter[]).map(diff => (
-                    <button
-                      key={diff}
-                      onClick={() => {
-                        sounds.playClick();
-                        setSelectedDifficulty(diff);
-                      }}
-                      className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                        selectedDifficulty === diff
-                          ? 'bg-[#D4AF37] text-slate-950 border-[#D4AF37]'
-                          : 'bg-[#101018] text-slate-400 border-slate-800 hover:border-slate-700'
-                      }`}
-                    >
-                      {diff === 'all' ? 'متنوع' : diff === 'easy' ? 'سهل' : diff === 'medium' ? 'متوسط' : 'صعب'}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
 
-            {/* QUESTION MODES (6 modes) */}
-            <div className="mb-6 p-4 rounded-2xl bg-[#0B0B12] border border-[#D4AF37]/30 gold-glow">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#F5D77A]" />
-                  <label className="text-xs md:text-sm font-bold text-slate-100">
-                    أنماط الأسئلة المفعلة ({enabledModes.length} من 6):
-                  </label>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={selectAllModes}
-                    className="text-[11px] text-[#F5D77A] hover:underline cursor-pointer font-bold"
-                  >
-                    تفعيل الكل
-                  </button>
-                  <span className="text-slate-600">·</span>
-                  <button
-                    onClick={selectOnlyDirect}
-                    className="text-[11px] text-slate-400 hover:text-slate-200 hover:underline cursor-pointer"
-                  >
-                    مباشر فقط
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                {QUESTION_MODES.map(mode => {
-                  const isActive = enabledModes.includes(mode.id);
-                  return (
-                    <div
-                      key={mode.id}
-                      onClick={() => toggleMode(mode.id)}
-                      className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
-                        isActive
-                          ? 'bg-[#151522] border-[#D4AF37] shadow-md gold-glow'
-                          : 'bg-[#0E0E16]/80 border-slate-800/80 opacity-60 hover:opacity-90'
-                      }`}
-                    >
-                      <div className="p-2 rounded-lg bg-black/40 flex-shrink-0">
-                        {MODE_ICON_MAP[mode.id]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <span className={`text-xs font-bold ${isActive ? 'text-[#F5D77A]' : 'text-slate-300'}`}>
-                            {mode.name}
-                          </span>
-                          <div className={`w-4 h-4 rounded-md border flex items-center justify-center text-[10px] font-black ${
-                            isActive ? 'bg-[#D4AF37] border-[#D4AF37] text-slate-950' : 'border-slate-700 bg-transparent'
-                          }`}>
-                            {isActive ? '✓' : ''}
-                          </div>
-                        </div>
-                        <p className="text-[10px] text-slate-400 truncate mt-0.5">
-                          {mode.desc}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Category Selection Grid */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-3">
-                <label className="text-xs font-semibold text-slate-300">
-                  اختيار التصنيفات المعرفية ({selectedCategories.length} من 10)
-                </label>
-                <div className="flex gap-2">
-                  <button
-                    onClick={selectRandomCategories}
-                    className="text-[11px] text-[#F5D77A] hover:underline cursor-pointer"
-                  >
-                    عشوائي (5)
-                  </button>
-                  <span className="text-slate-600">·</span>
-                  <button
-                    onClick={selectAllCategories}
-                    className="text-[11px] text-slate-400 hover:text-slate-200 hover:underline cursor-pointer"
-                  >
-                    تحديد الكل
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                {CATEGORIES.map(cat => {
-                  const isSelected = selectedCategories.includes(cat.id);
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => toggleCategory(cat.id)}
-                      className={`p-3 rounded-xl border flex flex-col items-center gap-2 text-center transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#1E1E2D] border-[#D4AF37] text-slate-100 gold-glow'
-                          : 'bg-[#0E0E16] border-slate-800 text-slate-400 opacity-60 hover:opacity-100'
-                      }`}
-                    >
-                      <div className="p-2 rounded-lg bg-black/40">
-                        {CATEGORY_ICON_MAP[cat.id]}
-                      </div>
-                      <span className="text-xs font-semibold">{cat.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Start Button */}
-            <div className="pt-4 flex justify-end">
-              <button
-                disabled={selectedCategories.length < 3 || enabledModes.length === 0}
-                onClick={initiateStartGame}
-                className="w-full md:w-auto flex items-center justify-center gap-3 py-3.5 px-10 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-[#F5D77A] via-[#D4AF37] to-[#B8902B] hover:brightness-110 active:scale-[0.98] transition-all shadow-lg gold-glow cursor-pointer font-display text-lg disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Play className="w-5 h-5 fill-slate-950" />
-                <span>دخول حلبة التحدي</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* RAFFLE / DRAW ANIMATION OVERLAY */}
-      {isDrawingStartingPlayer && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
-          <Dice5 className="w-16 h-16 text-[#F5D77A] animate-spin mb-4" />
-          <h3 className="text-2xl font-bold font-display gold-text-gradient mb-6">
-            قرعة ضربة البداية...
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl w-full">
-            {players.map((p, idx) => {
-              const isHighlight = drawActiveIndex === idx;
-              const color = PLAYER_COLORS[p.colorIndex];
-              return (
-                <div
-                  key={p.id}
-                  className={`p-4 rounded-2xl border transition-all ${
-                    isHighlight
-                      ? `${color.border} ${color.bg} scale-105 shadow-2xl`
-                      : 'border-slate-800 bg-[#0E0E16]/80 opacity-40'
-                  }`}
-                >
-                  <span className={`text-base font-bold ${isHighlight ? color.text : 'text-slate-400'}`}>
-                    {p.name}
-                  </span>
-                </div>
-              );
-            })}
+            {/* START BUTTON */}
+            <button
+              disabled={isDrawingStartingPlayer}
+              onClick={initiateStartGame}
+              className="w-full py-4 rounded-2xl font-bold btn-accent cursor-pointer font-display text-lg flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isDrawingStartingPlayer ? (
+                <>
+                  <Dice5 className="w-5 h-5 animate-spin" />
+                  <span>جاري إجراء قرعة البداية بين اللاعبين...</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-5 h-5 fill-current" />
+                  <span>بدء التحدي الآن</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}
@@ -1641,16 +1725,16 @@ export default function App() {
       {/* 3. SCREEN: PLAY */}
       {/* ========================================================= */}
       {currentScreen === 'PLAY' && currentQuestion && (
-        <div className="relative z-10 flex-1 flex flex-col justify-between max-w-5xl mx-auto w-full px-4 py-4 md:py-6">
-          {/* Top Bar with Status & Theme Switcher */}
-          <header className="flex items-center justify-between gap-4 pb-3 border-b border-[#D4AF37]/15">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="font-display font-bold text-lg md:text-xl gold-text-gradient">
-                تحدي الثلاثين
+        <div className="relative z-10 flex-1 flex flex-col justify-between max-w-4xl mx-auto w-full p-3 md:p-6">
+          {/* Header Bar */}
+          <header className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[var(--text-muted)]">
+                السؤال {currentQuestionIndex + 1}
               </span>
 
               {/* Current Question Mode Badge */}
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#12121A] border border-[#D4AF37]/40 text-xs font-bold text-[#F5D77A] gold-glow">
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full glass-card text-xs font-bold text-[var(--accent-light)] accent-glow">
                 {MODE_ICON_MAP[currentQuestion.type]}
                 <span>{QUESTION_MODES.find(m => m.id === currentQuestion.type)?.name || 'سؤال'}</span>
               </div>
@@ -1658,27 +1742,27 @@ export default function App() {
               {/* Active Player Turn Banner (Multiplayer) */}
               {gameMode !== 'solo' && (
                 <div 
-                  className={`px-3 py-1 rounded-full border text-xs font-bold flex items-center gap-1.5 animate-in fade-in transition-all`}
-                  style={{ borderColor: activeColor.hex, backgroundColor: `${activeColor.hex}18`, color: activeColor.hex }}
+                  className="px-3 py-1 rounded-full border text-xs font-bold flex items-center gap-1.5 animate-in fade-in transition-all"
+                  style={activeTheme.styleCard}
                 >
-                  <span className="w-2 h-2 rounded-full animate-ping" style={{ backgroundColor: activeColor.hex }} />
-                  <span>دور: {activePlayer.name}</span>
+                  <span className="w-2 h-2 rounded-full animate-ping" style={{ backgroundColor: activeTheme.varColor }} />
+                  <span style={activeTheme.styleText}>دور: {activePlayer.name}</span>
                 </div>
               )}
 
               {/* Special Phase Badges */}
               {isFinalRound && (
-                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-500 dark:text-amber-300 border border-amber-500/40 animate-pulse">
                   الجولة الأخيرة! ⚡
                 </span>
               )}
               {isTieBreaker && (
-                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-rose-500/20 text-rose-500 dark:text-rose-300 border border-rose-500/40 animate-pulse">
                   جولة الموت المفاجئ
                 </span>
               )}
               {isCurrentQuestionWager && (
-                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1">
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-purple-500/20 text-purple-400 dark:text-purple-300 border border-purple-500/40 flex items-center gap-1">
                   <Zap className="w-3 h-3 text-yellow-300" />
                   <span>رهان مضاعف</span>
                 </span>
@@ -1689,7 +1773,7 @@ export default function App() {
               {renderThemeButton()}
               <button
                 onClick={handleToggleMute}
-                className="p-2 rounded-xl bg-[#12121A] border border-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+                className="p-2 rounded-xl glass-panel text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors cursor-pointer"
                 title={isMuted ? 'تشغيل الصوت' : 'كتم الصوت'}
               >
                 {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
@@ -1700,7 +1784,7 @@ export default function App() {
                   pauseTimer();
                   setIsPauseModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#12121A] border border-slate-800 text-slate-300 hover:border-slate-700 text-xs font-semibold cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-panel text-[var(--text-secondary)] hover:border-[var(--border-accent)] text-xs font-semibold cursor-pointer"
               >
                 <Pause className="w-3.5 h-3.5" />
                 <span>إيقاف</span>
@@ -1711,7 +1795,7 @@ export default function App() {
                   pauseTimer();
                   setIsQuitModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-950/30 border border-rose-900/40 text-rose-400 hover:bg-rose-950/50 text-xs font-semibold cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 dark:text-rose-400 hover:bg-rose-500/20 text-xs font-semibold cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>خروج</span>
@@ -1723,9 +1807,9 @@ export default function App() {
           <div className="my-3">
             {/* 1. SOLO SCOREBOARD */}
             {gameMode === 'solo' && (
-              <div className="p-4 rounded-2xl bg-[#151522] border border-[#D4AF37] gold-glow flex items-center justify-between gap-4">
+              <div className="p-4 rounded-2xl glass-card flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <span className="font-bold text-base text-[#F5D77A]">{activePlayer.name}</span>
+                  <span className="font-bold text-base text-[var(--accent-light)]">{activePlayer.name}</span>
                   {/* Hearts / Lives indicator */}
                   <div className="flex items-center gap-1">
                     {Array.from({ length: 5 }).map((_, i) => {
@@ -1734,7 +1818,7 @@ export default function App() {
                         <Heart
                           key={i}
                           className={`w-5 h-5 transition-all ${
-                            hasLife ? 'text-rose-500 fill-rose-500 animate-pulse' : 'text-slate-700 opacity-30'
+                            hasLife ? 'text-rose-500 fill-rose-500 animate-pulse' : 'text-slate-400 opacity-25'
                           }`}
                         />
                       );
@@ -1744,23 +1828,23 @@ export default function App() {
 
                 {/* Progress Towards Target */}
                 <div className="flex-1 max-w-xs mx-4 hidden sm:block">
-                  <div className="flex justify-between text-[11px] text-slate-400 mb-1">
+                  <div className="flex justify-between text-[11px] text-[var(--text-muted)] mb-1">
                     <span>التقدم نحو {targetScore}</span>
                     <span>{Math.round((activePlayer.score / targetScore) * 100)}%</span>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-black/50 overflow-hidden border border-slate-800">
+                  <div className="w-full h-2 rounded-full bg-black/30 dark:bg-black/50 overflow-hidden border border-[var(--border-subtle)]">
                     <div 
-                      className="h-full bg-gradient-to-r from-amber-400 to-[#D4AF37] transition-all duration-300"
+                      className="h-full bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-light)] transition-all duration-300"
                       style={{ width: `${Math.min(100, (activePlayer.score / targetScore) * 100)}%` }}
                     />
                   </div>
                 </div>
 
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl md:text-4xl font-extrabold font-display text-[#F5D77A]">
+                  <span className="text-3xl md:text-4xl font-extrabold font-display text-[var(--accent-light)]">
                     {activePlayer.score}
                   </span>
-                  <span className="text-xs text-slate-400">/ {targetScore} ن</span>
+                  <span className="text-xs text-[var(--text-muted)]">/ {targetScore} ن</span>
                 </div>
               </div>
             )}
@@ -1774,45 +1858,52 @@ export default function App() {
               }`}>
                 {players.map((p, idx) => {
                   const isCurrent = idx === currentPlayerIndex;
-                  const color = PLAYER_COLORS[p.colorIndex];
+                  const theme = getPlayerTheme(p.colorIndex);
                   return (
                     <div
                       key={p.id}
                       className={`p-3 rounded-2xl border transition-all duration-300 ${
                         isCurrent 
-                          ? `bg-[#151522] ${color.border} ${color.borderGlow} scale-[1.02]` 
-                          : 'bg-[#0E0E16]/80 border-slate-800 opacity-60'
+                          ? `scale-[1.02] shadow-lg` 
+                          : 'glass-panel opacity-65'
                       }`}
+                      style={isCurrent ? theme.styleCard : undefined}
                     >
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className={`text-xs md:text-sm font-bold truncate ${isCurrent ? color.text : 'text-slate-300'}`}>
+                        <span 
+                          className="text-xs md:text-sm font-bold truncate"
+                          style={isCurrent ? theme.styleText : undefined}
+                        >
                           {p.name}
                         </span>
 
                         {/* Streak Flames Indicator */}
                         <div className="flex items-center gap-0.5">
-                          <Flame className={`w-3.5 h-3.5 ${p.streak >= 1 ? 'text-amber-500 fill-amber-500' : 'text-slate-700'}`} />
-                          <Flame className={`w-3.5 h-3.5 ${p.streak >= 2 ? 'text-amber-500 fill-amber-500' : 'text-slate-700'}`} />
-                          <Flame className={`w-3.5 h-3.5 ${p.streak >= 3 ? 'text-yellow-400 fill-yellow-400 animate-bounce' : 'text-slate-700'}`} />
+                          <Flame className={`w-3.5 h-3.5 ${p.streak >= 1 ? 'text-amber-500 fill-amber-500' : 'text-slate-400 opacity-30'}`} />
+                          <Flame className={`w-3.5 h-3.5 ${p.streak >= 2 ? 'text-amber-500 fill-amber-500' : 'text-slate-400 opacity-30'}`} />
+                          <Flame className={`w-3.5 h-3.5 ${p.streak >= 3 ? 'text-yellow-400 fill-yellow-400 animate-bounce' : 'text-slate-400 opacity-30'}`} />
                         </div>
                       </div>
 
                       <div className="flex items-baseline justify-between">
-                        <span className={`text-2xl md:text-3xl font-extrabold font-display ${isCurrent ? color.text : 'text-slate-200'}`}>
+                        <span 
+                          className="text-2xl md:text-3xl font-extrabold font-display"
+                          style={isCurrent ? theme.styleText : undefined}
+                        >
                           {p.score}
                         </span>
                         {isCurrent && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: color.hex, color: '#07070B' }}>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={theme.styleBadge}>
                             دوره
                           </span>
                         )}
                       </div>
 
                       {/* Small progress bar */}
-                      <div className="w-full h-1 rounded-full bg-black/40 overflow-hidden mt-1.5">
+                      <div className="w-full h-1 rounded-full bg-black/20 dark:bg-black/40 overflow-hidden mt-1.5">
                         <div 
                           className="h-full transition-all duration-300"
-                          style={{ width: `${Math.min(100, (p.score / targetScore) * 100)}%`, backgroundColor: color.hex }}
+                          style={{ width: `${Math.min(100, (p.score / targetScore) * 100)}%`, backgroundColor: theme.varColor }}
                         />
                       </div>
                     </div>
@@ -1823,33 +1914,48 @@ export default function App() {
           </div>
 
           {/* QUESTION CARD */}
-          <div className="relative glass-card p-6 md:p-8 rounded-3xl border border-[#D4AF37]/30 gold-glow my-2 flex-1 flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+          <div className="relative glass-card p-6 md:p-8 rounded-3xl accent-glow my-2 flex-1 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-[var(--border-subtle)]">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-black/40">
+                <div className="p-1.5 rounded-lg bg-black/10 dark:bg-black/40">
                   {CATEGORY_ICON_MAP[currentQuestion.category]}
                 </div>
-                <span className="text-xs md:text-sm font-bold text-slate-200">
+                <span className="text-xs md:text-sm font-bold text-[var(--text-main)]">
                   {currentQuestion.category}
                 </span>
-                <span className="text-slate-600">·</span>
+                <span className="text-[var(--text-muted)]">·</span>
                 <span className={`text-[11px] font-semibold px-2 py-0.5 rounded ${
-                  currentQuestion.difficulty === 'easy' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                  currentQuestion.difficulty === 'medium' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                  'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                  currentQuestion.difficulty === 'easy' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25' :
+                  currentQuestion.difficulty === 'medium' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25' :
+                  'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25'
                 }`}>
                   {currentQuestion.difficulty === 'easy' ? 'سهل' : currentQuestion.difficulty === 'medium' ? 'متوسط' : 'صعب'}
                 </span>
               </div>
 
+              {/* Timer with Dynamic SVG Circle */}
               <div className="flex items-center gap-2">
-                <Clock className={`w-4 h-4 ${timeRemaining <= 5 ? 'text-rose-500 animate-spin' : 'text-[#D4AF37]'}`} />
-                <span className={`font-mono text-lg md:text-xl font-extrabold ${
-                  timeRemaining <= 5 ? 'text-rose-400 animate-pulse' :
-                  timeRemaining <= 10 ? 'text-amber-400' : 'text-slate-100'
-                }`}>
-                  {Math.ceil(timeRemaining)} ث
-                </span>
+                <div className="relative w-10 h-10 flex items-center justify-center">
+                  <svg width="40" height="40" className="-rotate-90">
+                    <circle cx="20" cy="20" r="16" stroke="var(--timer-track)" strokeWidth="3" fill="transparent" />
+                    <circle 
+                      cx="20" cy="20" r="16" 
+                      stroke={timeRemaining <= 5 ? '#EF4444' : timeRemaining <= 10 ? '#F59E0B' : 'var(--accent-primary)'}
+                      strokeWidth="3" 
+                      fill="transparent"
+                      strokeDasharray={100.5}
+                      strokeDashoffset={100.5 * (1 - (timeRemaining / 30))}
+                      strokeLinecap="round"
+                      className="transition-all duration-100 ease-linear"
+                    />
+                  </svg>
+                  <span className={`absolute font-mono text-xs font-black ${
+                    timeRemaining <= 5 ? 'text-rose-500 animate-pulse' :
+                    timeRemaining <= 10 ? 'text-amber-500 dark:text-amber-400' : 'text-[var(--text-main)]'
+                  }`}>
+                    {Math.ceil(timeRemaining)}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -1857,18 +1963,18 @@ export default function App() {
             <div className="my-auto py-2">
               {currentQuestion.type === 'direct' && (
                 <div>
-                  <h3 className="question-text text-slate-100 mb-6 text-center">
+                  <h3 className="question-text text-[var(--text-main)] mb-6 text-center">
                     {(currentQuestion as DirectQuestion).question}
                   </h3>
                   {revealedLetterHint && (
-                    <div className="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center font-mono text-lg text-amber-300 font-bold">
+                    <div className="mb-4 p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-center font-mono text-lg text-amber-600 dark:text-amber-300 font-bold">
                       تلميح الحرف: {revealedLetterHint}
                     </div>
                   )}
                   {isAnswerRevealed && (
-                    <div className="p-4 rounded-2xl bg-[#12121A] border border-[#D4AF37]/50 text-center animate-in fade-in">
-                      <span className="text-xs text-slate-400 block mb-1">الإجابة المعتمدة:</span>
-                      <span className="answer-text text-xl md:text-2xl font-bold text-[#F5D77A]">
+                    <div className="p-4 rounded-2xl glass-panel border border-[var(--border-accent)] text-center animate-in fade-in">
+                      <span className="text-xs text-[var(--text-muted)] block mb-1">الإجابة المعتمدة:</span>
+                      <span className="answer-text text-xl md:text-2xl font-bold">
                         {(currentQuestion as DirectQuestion).answer}
                       </span>
                     </div>
@@ -1878,7 +1984,7 @@ export default function App() {
 
               {currentQuestion.type === 'mcq' && (
                 <div>
-                  <h3 className="question-text text-slate-100 mb-6 text-center">
+                  <h3 className="question-text text-[var(--text-main)] mb-6 text-center">
                     {(currentQuestion as McqQuestion).question}
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
@@ -1888,12 +1994,12 @@ export default function App() {
                       const isSelected = selectedChoiceIdx === idx;
                       const isCorrect = idx === (currentQuestion as McqQuestion).correctIndex;
 
-                      let btnStyle = 'bg-[#101018] border-slate-800 text-slate-200 hover:border-[#D4AF37]/50';
+                      let btnStyle = 'glass-panel hover:border-[var(--accent-primary)]';
                       if (selectedChoiceIdx !== null) {
                         if (isCorrect) {
-                          btnStyle = 'bg-emerald-950/80 border-emerald-500 text-emerald-200 font-bold';
+                          btnStyle = 'bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-300 font-bold';
                         } else if (isSelected && !isCorrect) {
-                          btnStyle = 'bg-rose-950/80 border-rose-500 text-rose-200';
+                          btnStyle = 'bg-rose-500/20 border-rose-500 text-rose-600 dark:text-rose-300';
                         }
                       }
 
@@ -1904,21 +2010,21 @@ export default function App() {
                           onClick={() => handleSelectMcq(idx)}
                           className={`p-4 rounded-2xl border text-right flex items-center gap-3 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${btnStyle}`}
                         >
-                          <span className="w-8 h-8 rounded-xl bg-black/40 border border-slate-700 flex items-center justify-center font-bold text-sm text-[#F5D77A]">
+                          <span className="w-8 h-8 rounded-xl bg-black/10 dark:bg-black/40 border border-[var(--border-subtle)] flex items-center justify-center font-bold text-sm text-[var(--accent-light)]">
                             {letter}
                           </span>
                           <span className="text-sm md:text-base font-semibold flex-1">
                             {choice}
                           </span>
-                          {selectedChoiceIdx !== null && isCorrect && <Check className="w-5 h-5 text-emerald-400" />}
-                          {selectedChoiceIdx !== null && isSelected && !isCorrect && <X className="w-5 h-5 text-rose-400" />}
+                          {selectedChoiceIdx !== null && isCorrect && <Check className="w-5 h-5 text-emerald-500" />}
+                          {selectedChoiceIdx !== null && isSelected && !isCorrect && <X className="w-5 h-5 text-rose-500" />}
                         </button>
                       );
                     })}
                   </div>
                   {isAnswerRevealed && (
-                    <div className="p-3.5 rounded-2xl bg-[#12121A] border border-[#D4AF37]/30 text-xs md:text-sm text-slate-300">
-                      <strong className="text-[#F5D77A]">💡 هل تعلم؟ </strong>
+                    <div className="p-3.5 rounded-2xl glass-panel border border-[var(--border-accent)] text-xs md:text-sm text-[var(--text-secondary)]">
+                      <strong className="text-[var(--accent-light)]">💡 هل تعلم؟ </strong>
                       {(currentQuestion as McqQuestion).explanation}
                     </div>
                   )}
@@ -1927,7 +2033,7 @@ export default function App() {
 
               {currentQuestion.type === 'tf' && (
                 <div>
-                  <h3 className="question-text text-slate-100 mb-8 text-center">
+                  <h3 className="question-text text-[var(--text-main)] mb-8 text-center">
                     {(currentQuestion as TfQuestion).question}
                   </h3>
                   <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto mb-6">
@@ -1937,12 +2043,12 @@ export default function App() {
                       className={`p-6 rounded-2xl border flex flex-col items-center gap-3 transition-all cursor-pointer disabled:opacity-40 ${
                         selectedTfChoice === true
                           ? (currentQuestion as TfQuestion).answer === true
-                            ? 'bg-emerald-950/80 border-emerald-500 text-emerald-200 gold-glow'
-                            : 'bg-rose-950/80 border-rose-500 text-rose-200'
-                          : 'bg-[#101018] border-slate-800 text-slate-200 hover:border-emerald-500/50'
+                            ? 'bg-emerald-500/25 border-emerald-500 text-emerald-500 accent-glow'
+                            : 'bg-rose-500/25 border-rose-500 text-rose-500'
+                          : 'glass-panel hover:border-emerald-500/50'
                       }`}
                     >
-                      <Check className="w-10 h-10 text-emerald-400" />
+                      <Check className="w-10 h-10 text-emerald-500" />
                       <span className="text-xl font-bold font-display">صحيح ✓</span>
                     </button>
                     <button
@@ -1951,18 +2057,18 @@ export default function App() {
                       className={`p-6 rounded-2xl border flex flex-col items-center gap-3 transition-all cursor-pointer disabled:opacity-40 ${
                         selectedTfChoice === false
                           ? (currentQuestion as TfQuestion).answer === false
-                            ? 'bg-emerald-950/80 border-emerald-500 text-emerald-200 gold-glow'
-                            : 'bg-rose-950/80 border-rose-500 text-rose-200'
-                          : 'bg-[#101018] border-slate-800 text-slate-200 hover:border-rose-500/50'
+                            ? 'bg-emerald-500/25 border-emerald-500 text-emerald-500 accent-glow'
+                            : 'bg-rose-500/25 border-rose-500 text-rose-500'
+                          : 'glass-panel hover:border-rose-500/50'
                       }`}
                     >
-                      <X className="w-10 h-10 text-rose-400" />
+                      <X className="w-10 h-10 text-rose-500" />
                       <span className="text-xl font-bold font-display">خطأ ✗</span>
                     </button>
                   </div>
                   {isAnswerRevealed && (
-                    <div className="p-3.5 rounded-2xl bg-[#12121A] border border-[#D4AF37]/30 text-xs md:text-sm text-slate-300 text-center">
-                      <strong className="text-[#F5D77A]">💡 التعليل: </strong>
+                    <div className="p-3.5 rounded-2xl glass-panel border border-[var(--border-accent)] text-xs md:text-sm text-[var(--text-secondary)] text-center">
+                      <strong className="text-[var(--accent-light)]">💡 التعليل: </strong>
                       {(currentQuestion as TfQuestion).explanation}
                     </div>
                   )}
@@ -1972,20 +2078,20 @@ export default function App() {
               {currentQuestion.type === 'fill' && (
                 <div>
                   <div className="text-center mb-2">
-                    <span className="text-xs font-bold text-[#F5D77A] px-3 py-1 rounded-full bg-black/40 border border-[#D4AF37]/30">
+                    <span className="text-xs font-bold text-[var(--accent-light)] px-3 py-1 rounded-full glass-panel border border-[var(--border-accent)]">
                       {(currentQuestion as FillQuestion).kind || 'أكمل الناقص'}
                     </span>
                   </div>
-                  <h3 className="question-text text-slate-100 mb-6 text-center leading-loose">
+                  <h3 className="question-text text-[var(--text-main)] mb-6 text-center leading-loose">
                     {(currentQuestion as FillQuestion).text.replace('____', isAnswerRevealed ? `[ ${(currentQuestion as FillQuestion).answer} ]` : '[ ________ ]')}
                   </h3>
                   {isAnswerRevealed && (
-                    <div className="p-4 rounded-2xl bg-[#12121A] border border-[#D4AF37]/50 text-center animate-in fade-in">
-                      <span className="text-xs text-slate-400 block mb-1">الكلمة الناقصة:</span>
-                      <span className="answer-text text-2xl font-bold text-[#F5D77A]">
+                    <div className="p-4 rounded-2xl glass-panel border border-[var(--border-accent)] text-center animate-in fade-in">
+                      <span className="text-xs text-[var(--text-muted)] block mb-1">الكلمة الناقصة:</span>
+                      <span className="answer-text text-2xl font-bold">
                         {(currentQuestion as FillQuestion).answer}
                       </span>
-                      <p className="text-xs text-slate-300 mt-2">
+                      <p className="text-xs text-[var(--text-secondary)] mt-2">
                         {(currentQuestion as FillQuestion).explanation}
                       </p>
                     </div>
@@ -1995,7 +2101,7 @@ export default function App() {
 
               {currentQuestion.type === 'match' && (
                 <div>
-                  <h4 className="text-sm md:text-base font-bold text-[#F5D77A] text-center mb-4">
+                  <h4 className="text-sm md:text-base font-bold text-[var(--accent-light)] text-center mb-4">
                     {(currentQuestion as MatchQuestion).title}
                   </h4>
                   <div className="grid grid-cols-2 gap-4 max-w-xl mx-auto mb-4">
@@ -2009,9 +2115,9 @@ export default function App() {
                             onClick={() => handleSelectMatchCard('right', idx)}
                             style={{ borderColor: conn ? conn.color : undefined }}
                             className={`p-3 rounded-xl border text-center text-xs md:text-sm font-semibold cursor-pointer transition-all ${
-                              conn ? 'bg-[#181824] shadow-md font-bold' :
-                              isSelected ? 'bg-[#D4AF37] text-slate-950 border-[#D4AF37] font-bold' :
-                              'bg-[#101018] border-slate-800 text-slate-200 hover:border-slate-700'
+                              conn ? 'glass-panel shadow-md font-bold' :
+                              isSelected ? 'bg-[var(--accent-primary)] text-[var(--accent-contrast)] border-[var(--accent-primary)] font-bold' :
+                              'glass-panel hover:border-[var(--border-accent)]'
                             }`}
                           >
                             {item.text}
@@ -2029,9 +2135,9 @@ export default function App() {
                             onClick={() => handleSelectMatchCard('left', idx)}
                             style={{ borderColor: conn ? conn.color : undefined }}
                             className={`p-3 rounded-xl border text-center text-xs md:text-sm font-semibold cursor-pointer transition-all ${
-                              conn ? 'bg-[#181824] shadow-md font-bold' :
-                              selectedRightIdx !== null ? 'bg-[#151522] border-[#D4AF37]/50 hover:border-[#D4AF37]' :
-                              'bg-[#101018] border-slate-800 text-slate-200'
+                              conn ? 'glass-panel shadow-md font-bold' :
+                              selectedRightIdx !== null ? 'glass-card border-[var(--border-accent)]' :
+                              'glass-panel'
                             }`}
                           >
                             {item.text}
@@ -2046,7 +2152,7 @@ export default function App() {
                       <button
                         disabled={connections.length < 4}
                         onClick={handleConfirmMatch}
-                        className="py-2.5 px-8 rounded-xl font-bold text-slate-950 bg-[#D4AF37] hover:brightness-110 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-xs md:text-sm gold-glow"
+                        className="py-2.5 px-8 rounded-xl font-bold btn-accent cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-xs md:text-sm"
                       >
                         تأكيد التوصيلات ({connections.length}/4)
                       </button>
@@ -2058,8 +2164,8 @@ export default function App() {
               {currentQuestion.type === 'hints' && (
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-xs text-slate-400">خمّن الشيء أو الشخصية من 5 تلميحات:</span>
-                    <span className="px-3 py-1 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/50 text-[#F5D77A] font-bold text-xs">
+                    <span className="text-xs text-[var(--text-muted)]">خمّن الشيء أو الشخصية من 5 تلميحات:</span>
+                    <span className="px-3 py-1 rounded-full bg-[var(--player-1-bg)] border border-[var(--border-accent)] text-[var(--accent-light)] font-bold text-xs">
                       قيمة السؤال الحالية: {getHintsCurrentPoints()} نقاط
                     </span>
                   </div>
@@ -2072,17 +2178,17 @@ export default function App() {
                           key={idx}
                           className={`p-3 rounded-xl border flex items-start gap-3 transition-all ${
                             isRevealed
-                              ? 'bg-[#12121A] border-[#D4AF37]/40 text-slate-100 font-medium'
-                              : 'bg-black/30 border-slate-900 text-slate-600 opacity-40'
+                              ? 'glass-card text-[var(--text-main)] font-medium'
+                              : 'glass-panel opacity-40'
                           }`}
                         >
                           <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                            isRevealed ? 'bg-[#D4AF37] text-slate-950' : 'bg-slate-800 text-slate-400'
+                            isRevealed ? 'bg-[var(--accent-primary)] text-[var(--accent-contrast)]' : 'bg-black/20 text-[var(--text-muted)]'
                           }`}>
                             {idx + 1}
                           </span>
                           <span className="text-xs md:text-sm flex-1 leading-relaxed">
-                            {isRevealed ? hint : 'تلميح مغلق (سيتكشف قريباً أو بالنقر)...'}
+                            {isRevealed ? hint : 'تلميح مغلق (سيتكشف تدريجياً)...'}
                           </span>
                         </div>
                       );
@@ -2093,13 +2199,16 @@ export default function App() {
                     <button
                       disabled={revealedHintsCount >= 5 || isAnswerRevealed}
                       onClick={handleRevealNextHint}
-                      className="py-2 px-4 rounded-xl bg-slate-900 border border-slate-700 text-xs font-semibold text-[#F5D77A] hover:bg-slate-800 cursor-pointer disabled:opacity-40"
+                      className="py-2 px-4 rounded-xl glass-panel text-xs font-semibold text-[var(--accent-light)] hover:border-[var(--border-accent)] cursor-pointer disabled:opacity-40"
                     >
                       كشف تلميح تالي (-1 نقطة)
                     </button>
                     {isAnswerRevealed && (
-                      <div className="answer-text font-bold text-lg text-[#F5D77A]">
-                        الإجابة: {(currentQuestion as HintsQuestion).answer}
+                      <div className="text-right">
+                        <span className="text-xs text-[var(--text-muted)] ml-2">الإجابة:</span>
+                        <span className="answer-text font-bold text-lg">
+                          {(currentQuestion as HintsQuestion).answer}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -2107,202 +2216,221 @@ export default function App() {
               )}
             </div>
 
-            {/* LIFELINES DOCK */}
-            <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] text-slate-400 font-semibold hidden sm:inline">وسائل المساعدة:</span>
-                
-                <button
-                  disabled={activePlayer.lifelines.letter || usedLifelineThisQuestion || isAnswerRevealed}
-                  onClick={handleUseLetterLifeline}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                    activePlayer.lifelines.letter 
-                      ? 'bg-black/40 border-slate-900 text-slate-600 opacity-40 cursor-not-allowed'
-                      : 'bg-[#12121A] border-[#D4AF37]/40 text-[#F5D77A] hover:bg-[#1A1A26]'
-                  }`}
-                  title={currentQuestion.type === 'mcq' ? 'حذف خيارين خاطئين (50:50)' : 'كشف الحرف الأول'}
-                >
-                  <KeyRound className="w-3.5 h-3.5" />
-                  <span>{currentQuestion.type === 'mcq' ? 'حذف خيارين' : 'الحرف الأول'}</span>
-                  {activePlayer.lifelines.letter && <span className="text-[10px]">✓</span>}
-                </button>
+            {/* Bottom Controls / Lifelines & Host Judgment for Direct/Hints */}
+            <div className="pt-4 border-t border-[var(--border-subtle)]">
+              {/* Host Judgment buttons for direct / fill / hints */}
+              {(currentQuestion.type === 'direct' || currentQuestion.type === 'fill' || currentQuestion.type === 'hints') && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  {/* Lifelines Bar */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      disabled={activePlayer.lifelines.letter || usedLifelineThisQuestion || isAnswerRevealed || !isTimerRunning}
+                      onClick={handleUseLetterClue}
+                      className={`lifeline-btn flex items-center justify-center p-2.5 rounded-xl border transition-all cursor-pointer ${
+                        activePlayer.lifelines.letter
+                          ? 'opacity-40 cursor-not-allowed border-[var(--border-subtle)]'
+                          : 'glass-panel hover:border-[var(--accent-primary)] text-[var(--accent-light)]'
+                      }`}
+                      title="كشف الحرف الأول (مرة واحدة)"
+                    >
+                      <KeyRound className="w-5 h-5" />
+                    </button>
 
-                <button
-                  disabled={activePlayer.lifelines.extraTime || usedLifelineThisQuestion || isAnswerRevealed}
-                  onClick={handleUseExtraTimeLifeline}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                    activePlayer.lifelines.extraTime 
-                      ? 'bg-black/40 border-slate-900 text-slate-600 opacity-40 cursor-not-allowed'
-                      : 'bg-[#12121A] border-sky-500/40 text-sky-300 hover:bg-[#1A1A26]'
-                  }`}
-                  title="إضافة 15 ثانية للمؤقت"
-                >
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>وقت إضافي</span>
-                  {activePlayer.lifelines.extraTime && <span className="text-[10px]">✓</span>}
-                </button>
+                    <button
+                      disabled={activePlayer.lifelines.extraTime || usedLifelineThisQuestion || isAnswerRevealed || !isTimerRunning}
+                      onClick={handleUseExtraTime}
+                      className={`lifeline-btn flex items-center justify-center p-2.5 rounded-xl border transition-all cursor-pointer ${
+                        activePlayer.lifelines.extraTime
+                          ? 'opacity-40 cursor-not-allowed border-[var(--border-subtle)]'
+                          : 'glass-panel hover:border-[var(--accent-primary)] text-[var(--accent-light)]'
+                      }`}
+                      title="وقت إضافي +15 ثانية (مرة واحدة)"
+                    >
+                      <Clock className="w-5 h-5" />
+                    </button>
 
-                <button
-                  disabled={activePlayer.lifelines.friend || usedLifelineThisQuestion || isAnswerRevealed}
-                  onClick={handleUseFriendLifeline}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                    activePlayer.lifelines.friend 
-                      ? 'bg-black/40 border-slate-900 text-slate-600 opacity-40 cursor-not-allowed'
-                      : 'bg-[#12121A] border-purple-500/40 text-purple-300 hover:bg-[#1A1A26]'
-                  }`}
-                  title="استشارة صديق لمدة 20 ثانية"
-                >
-                  <PhoneCall className="w-3.5 h-3.5" />
-                  <span>استشارة صديق</span>
-                  {activePlayer.lifelines.friend && <span className="text-[10px]">✓</span>}
-                </button>
-              </div>
+                    <button
+                      disabled={activePlayer.lifelines.friend || usedLifelineThisQuestion || isAnswerRevealed || !isTimerRunning}
+                      onClick={handleUseFriend}
+                      className={`lifeline-btn flex items-center justify-center p-2.5 rounded-xl border transition-all cursor-pointer ${
+                        activePlayer.lifelines.friend
+                          ? 'opacity-40 cursor-not-allowed border-[var(--border-subtle)]'
+                          : 'glass-panel hover:border-[var(--accent-primary)] text-[var(--accent-light)]'
+                      }`}
+                      title="استشارة صديق 20 ثانية (مرة واحدة)"
+                    >
+                      <PhoneCall className="w-5 h-5" />
+                    </button>
 
-              <button
-                disabled={activePlayer.skips >= 2 || isProcessingAnswer}
-                onClick={handleSkipQuestion}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                  activePlayer.skips >= 2
-                    ? 'bg-black/40 border-slate-900 text-slate-600 opacity-40 cursor-not-allowed'
-                    : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'
-                }`}
-              >
-                <SkipForward className="w-3.5 h-3.5" />
-                <span>تخطي ({2 - activePlayer.skips})</span>
-              </button>
+                    <button
+                      disabled={activePlayer.skips >= 2 || isAnswerRevealed || !isTimerRunning}
+                      onClick={handleSkipQuestion}
+                      className="px-3 py-2 rounded-xl glass-panel hover:border-[var(--border-accent)] text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer disabled:opacity-40"
+                    >
+                      تخطي ({2 - activePlayer.skips})
+                    </button>
+                  </div>
+
+                  {/* Host Decision Buttons */}
+                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                    {!isAnswerRevealed ? (
+                      <button
+                        onClick={() => setIsAnswerRevealed(true)}
+                        className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl glass-panel hover:border-[var(--border-accent)] text-xs font-bold text-[var(--accent-light)] flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <Eye className="w-4 h-4" />
+                        <span>كشف الإجابة</span>
+                      </button>
+                    ) : (
+                      <div className="flex gap-2 w-full sm:w-auto">
+                        <button
+                          disabled={isProcessingAnswer}
+                          onClick={() => awardPointsAndAdvance(true, currentQuestion.type === 'hints' ? getHintsCurrentPoints() : 1)}
+                          className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs md:text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg disabled:opacity-50"
+                        >
+                          <Check className="w-4 h-4" />
+                          <span>إجابة صحيحة</span>
+                        </button>
+                        <button
+                          disabled={isProcessingAnswer}
+                          onClick={() => awardPointsAndAdvance(false, 0)}
+                          className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs md:text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg disabled:opacity-50"
+                        >
+                          <X className="w-4 h-4" />
+                          <span>إجابة خاطئة</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* MCQ & Match bottom bar */}
+              {(currentQuestion.type === 'mcq' || currentQuestion.type === 'match' || currentQuestion.type === 'tf') && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {currentQuestion.type === 'mcq' && (
+                      <button
+                        disabled={activePlayer.lifelines.letter || usedLifelineThisQuestion || isAnswerRevealed || !isTimerRunning}
+                        onClick={handleUseLetterClue}
+                        className="px-3 py-2 rounded-xl glass-panel hover:border-[var(--accent-primary)] text-xs font-semibold text-[var(--accent-light)] flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                      >
+                        <KeyRound className="w-4 h-4" />
+                        <span>حذف خيارين (50:50)</span>
+                      </button>
+                    )}
+
+                    <button
+                      disabled={activePlayer.lifelines.extraTime || usedLifelineThisQuestion || isAnswerRevealed || !isTimerRunning}
+                      onClick={handleUseExtraTime}
+                      className="px-3 py-2 rounded-xl glass-panel hover:border-[var(--accent-primary)] text-xs font-semibold text-[var(--accent-light)] flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                    >
+                      <Clock className="w-4 h-4" />
+                      <span>+15 ثانية</span>
+                    </button>
+
+                    <button
+                      disabled={activePlayer.skips >= 2 || isAnswerRevealed || !isTimerRunning}
+                      onClick={handleSkipQuestion}
+                      className="px-3 py-2 rounded-xl glass-panel hover:border-[var(--border-accent)] text-xs font-semibold text-[var(--text-muted)] cursor-pointer disabled:opacity-40"
+                    >
+                      تخطي ({2 - activePlayer.skips})
+                    </button>
+                  </div>
+
+                  <span className="text-[11px] text-[var(--text-muted)]">
+                    {currentQuestion.type === 'match' ? 'صل كل عنصر بقرينه' : 'اختر الإجابة الصحيحة مباشرة'}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
-
-          {/* HOST JUDGMENT BUTTONS */}
-          {(currentQuestion.type === 'direct' || currentQuestion.type === 'fill' || currentQuestion.type === 'hints') && (
-            <div className="grid grid-cols-3 gap-3 my-2">
-              <button
-                disabled={isProcessingAnswer}
-                onClick={() => {
-                  const pts = currentQuestion.type === 'hints' ? getHintsCurrentPoints() : 1;
-                  awardPointsAndAdvance(true, pts);
-                }}
-                className="py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] font-bold text-white flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer font-display text-base disabled:opacity-40"
-              >
-                <Check className="w-5 h-5" />
-                <span>إجابة صحيحة ✓</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  sounds.playClick();
-                  setIsAnswerRevealed(prev => !prev);
-                }}
-                className="py-3 px-4 rounded-2xl bg-[#12121A] hover:bg-[#1A1A26] border border-slate-700 text-slate-200 flex items-center justify-center gap-2 transition-all cursor-pointer text-xs md:text-sm font-semibold"
-              >
-                <Eye className="w-4 h-4 text-[#D4AF37]" />
-                <span>{isAnswerRevealed ? 'إخفاء الإجابة' : 'إظهار الإجابة'}</span>
-              </button>
-
-              <button
-                disabled={isProcessingAnswer}
-                onClick={() => awardPointsAndAdvance(false, 0)}
-                className="py-3 px-4 rounded-2xl bg-rose-700 hover:bg-rose-600 active:scale-[0.98] font-bold text-white flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer font-display text-base disabled:opacity-40"
-              >
-                <X className="w-5 h-5" />
-                <span>إجابة خاطئة ✗</span>
-              </button>
-            </div>
-          )}
         </div>
       )}
 
       {/* ========================================================= */}
-      {/* 4. SCREEN: VICTORY / RESULTS */}
+      {/* 4. SCREEN: VICTORY */}
       {/* ========================================================= */}
       {currentScreen === 'VICTORY' && (
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 text-center max-w-4xl mx-auto w-full">
-          <div className="glass-card p-8 md:p-12 rounded-3xl border border-[#D4AF37]/40 gold-glow shadow-2xl w-full">
-            {/* 1. SOLO VICTORY / LOSS RESULT */}
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center max-w-4xl mx-auto w-full p-6 text-center">
+          <div className="glass-card p-8 md:p-12 rounded-3xl accent-glow shadow-2xl max-w-2xl w-full">
+            {/* Solo Result or Multiplayer Result */}
             {gameMode === 'solo' ? (
               <div>
-                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-[#D4AF37]/20 border-2 border-[#D4AF37] flex items-center justify-center gold-glow">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-[var(--player-1-bg)] border-2 border-[var(--border-accent)] flex items-center justify-center">
                   {players[0].score >= targetScore ? (
-                    <Trophy className="w-10 h-10 text-[#F5D77A] animate-bounce" />
+                    <Trophy className="w-10 h-10 text-[var(--accent-primary)]" />
                   ) : (
-                    <HeartCrack className="w-10 h-10 text-rose-400" />
+                    <HeartCrack className="w-10 h-10 text-rose-500" />
                   )}
                 </div>
 
-                <span className="text-xs font-bold text-[#F5D77A] tracking-widest uppercase">
-                  {players[0].score >= targetScore ? 'انتصار مستحق!' : 'انتهت المحاولة!'}
-                </span>
-
-                <h2 className="text-3xl md:text-5xl font-extrabold font-display gold-text-gradient my-3">
-                  {players[0].score >= targetScore 
-                    ? `تهانينا ${players[0].name}! بلغت القمة!` 
-                    : `محاولة شجاعة يا ${players[0].name}!`}
+                <h2 className="text-3xl md:text-5xl font-extrabold font-display accent-gradient-text mb-2">
+                  {players[0].score >= targetScore ? 'انتصار مستحق وبطولي!' : 'انتهت المحاولة!'}
                 </h2>
+                <p className="text-sm md:text-base text-[var(--text-secondary)] mb-6">
+                  {players[0].score >= targetScore
+                    ? `أتممت التحدي وجمعت ${players[0].score} نقطة بنجاح!`
+                    : `نفدت الأرواح قبل بلوغ ${targetScore} نقطة. درّب ذاكرتك وأعد المحاولة!`}
+                </p>
 
                 {isNewSoloRecord && (
-                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 border border-amber-400 text-amber-300 font-bold text-xs mb-6 gold-glow animate-pulse">
-                    <Trophy className="w-4 h-4 text-[#F5D77A]" />
-                    <span>رقم قياسي جديد مسجل باسمك! 🏆</span>
+                  <div className="p-3 mb-6 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-500 dark:text-amber-300 font-bold text-sm accent-glow">
+                    🌟 رقم قياسي شخصي جديد في السرعة وعدد الأسئلة!
                   </div>
                 )}
 
-                {/* Solo Stats Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-xl mx-auto mb-8 text-center">
-                  <div className="p-3.5 rounded-2xl bg-[#0E0E16] border border-slate-800">
-                    <span className="text-[11px] text-slate-400 block mb-1">النقاط المحققة</span>
-                    <span className="text-2xl font-bold font-display text-[#F5D77A]">{players[0].score}</span>
+                <div className="grid grid-cols-3 gap-3 mb-8">
+                  <div className="p-4 rounded-2xl glass-panel">
+                    <span className="text-2xl font-bold font-display text-[var(--accent-light)] block">{players[0].score}</span>
+                    <span className="text-[11px] text-[var(--text-muted)]">النقاط النهائية</span>
                   </div>
-                  <div className="p-3.5 rounded-2xl bg-[#0E0E16] border border-slate-800">
-                    <span className="text-[11px] text-slate-400 block mb-1">الأسئلة المجابة</span>
-                    <span className="text-2xl font-bold font-display text-white">{soloQuestionsAnswered + 1}</span>
+                  <div className="p-4 rounded-2xl glass-panel">
+                    <span className="text-2xl font-bold font-display text-[var(--accent-light)] block">{soloFinalTimeSeconds} ث</span>
+                    <span className="text-[11px] text-[var(--text-muted)]">الوقت الإجمالي</span>
                   </div>
-                  <div className="p-3.5 rounded-2xl bg-[#0E0E16] border border-slate-800">
-                    <span className="text-[11px] text-slate-400 block mb-1">الوقت المستغرق</span>
-                    <span className="text-2xl font-bold font-display text-sky-400">{soloFinalTimeSeconds} ث</span>
-                  </div>
-                  <div className="p-3.5 rounded-2xl bg-[#0E0E16] border border-slate-800">
-                    <span className="text-[11px] text-slate-400 block mb-1">أطول سلسلة</span>
-                    <span className="text-2xl font-bold font-display text-amber-400">{players[0].bestStreak} 🔥</span>
+                  <div className="p-4 rounded-2xl glass-panel">
+                    <span className="text-2xl font-bold font-display text-[var(--accent-light)] block">{players[0].bestStreak} 🔥</span>
+                    <span className="text-[11px] text-[var(--text-muted)]">أطول سلسلة</span>
                   </div>
                 </div>
               </div>
             ) : (
-              /* 2. MULTIPLAYER VICTORY PODIUM */
               <div>
-                <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-[#D4AF37]/20 border-2 border-[#D4AF37] flex items-center justify-center gold-glow">
-                  <Crown className="w-10 h-10 text-[#F5D77A] animate-bounce" />
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-[var(--player-1-bg)] border-2 border-[var(--border-accent)] flex items-center justify-center">
+                  <Crown className="w-10 h-10 text-[var(--accent-primary)] animate-bounce" />
                 </div>
 
-                <span className="text-xs font-bold text-[#F5D77A] tracking-widest uppercase">
-                  تتويج بطل التحدي
-                </span>
-
-                {/* Ranked Players List */}
                 {(() => {
                   const sorted = [...players].sort((a, b) => b.score - a.score);
                   const winner = sorted[0];
+                  const winnerTheme = getPlayerTheme(winner.colorIndex);
+                  const rankLabels = ['🥇 المركز الأول', '🥈 المركز الثاني', '🥉 المركز الثالث', '🎖️ المركز الرابع'];
+
                   return (
                     <div>
-                      <h2 className="text-3xl md:text-5xl font-extrabold font-display gold-text-gradient my-2">
-                        فوز {winner.name}!
+                      <h2 className="text-3xl md:text-5xl font-extrabold font-display accent-gradient-text mb-2">
+                        مبارك للفائز!
                       </h2>
-                      <p className="text-xs md:text-sm text-slate-300 mb-6">
-                        برصيد {winner.score} نقطة في منافسة شيقة بين {players.length} لاعبين!
+                      <div className="text-xl md:text-2xl font-bold my-3" style={winnerTheme.styleText}>
+                        👑 {winner.name} 👑
+                      </div>
+                      <p className="text-sm text-[var(--text-secondary)] mb-6">
+                        برصيد <strong>{winner.score} نقطة</strong> متفوقاً في تحدي المعلومات والثقافة!
                       </p>
 
-                      {/* Luxury Podium Display */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-2xl mx-auto mb-8">
+                      {/* Podium Summary */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-8">
                         {sorted.map((p, idx) => {
-                          const rankLabels = ['المركز الأول 🥇', 'المركز الثاني 🥈', 'المركز الثالث 🥉', 'المركز الرابع 🎖️'];
-                          const color = PLAYER_COLORS[p.colorIndex];
+                          const theme = getPlayerTheme(p.colorIndex);
                           return (
                             <div 
                               key={p.id}
-                              className={`p-4 rounded-2xl border text-center ${idx === 0 ? 'bg-[#151522] border-[#D4AF37] gold-glow' : 'bg-[#0E0E16] border-slate-800'}`}
+                              className={`p-4 rounded-2xl border text-center ${idx === 0 ? 'border-[var(--accent-primary)] bg-[var(--player-1-bg)] accent-glow' : 'glass-panel'}`}
                             >
-                              <span className="text-[10px] text-slate-400 block mb-1 font-bold">{rankLabels[idx]}</span>
-                              <span className={`text-sm font-bold block truncate ${color.text}`}>{p.name}</span>
-                              <span className="text-2xl font-bold font-display text-white mt-1 block">{p.score} ن</span>
+                              <span className="text-[10px] text-[var(--text-muted)] block mb-1 font-bold">{rankLabels[idx]}</span>
+                              <span className="text-sm font-bold block truncate" style={theme.styleText}>{p.name}</span>
+                              <span className="text-2xl font-bold font-display text-[var(--text-main)] mt-1 block">{p.score} ن</span>
                             </div>
                           );
                         })}
@@ -2312,28 +2440,28 @@ export default function App() {
                 })()}
 
                 {/* Detailed Stats Table */}
-                <div className="p-4 rounded-2xl bg-[#0E0E16] border border-slate-800 mb-8 max-w-2xl mx-auto text-right text-xs">
-                  <div className="font-bold text-[#F5D77A] mb-2 pb-2 border-b border-slate-800">
+                <div className="p-4 rounded-2xl glass-panel mb-8 max-w-2xl mx-auto text-right text-xs">
+                  <div className="font-bold text-[var(--accent-light)] mb-2 pb-2 border-b border-[var(--border-subtle)]">
                     جدول إحصائيات اللاعبين:
                   </div>
                   <div className="space-y-3">
                     {players.map(p => {
-                      const color = PLAYER_COLORS[p.colorIndex];
+                      const theme = getPlayerTheme(p.colorIndex);
                       return (
-                        <div key={p.id} className="p-2.5 rounded-xl bg-black/40 border border-slate-800/80">
+                        <div key={p.id} className="p-2.5 rounded-xl glass-card">
                           <div className="flex justify-between items-center mb-1">
-                            <span className={`font-bold ${color.text}`}>{p.name}</span>
-                            <span className="font-bold text-white">{p.score} نقطة</span>
+                            <span className="font-bold" style={theme.styleText}>{p.name}</span>
+                            <span className="font-bold text-[var(--text-main)]">{p.score} نقطة</span>
                           </div>
-                          <div className="flex justify-between text-slate-400 text-[11px] mb-1">
+                          <div className="flex justify-between text-[var(--text-muted)] text-[11px] mb-1">
                             <span>صحيحة: {p.correctCount}</span>
                             <span>أطول سلسلة: {p.bestStreak} 🔥</span>
                             <span>الرهانات: {p.bets}/2</span>
                             <span>التخطي: {p.skips}/2</span>
                           </div>
-                          <div className="flex flex-wrap gap-1 mt-1 pt-1 border-t border-slate-800/40">
+                          <div className="flex flex-wrap gap-1 mt-1 pt-1 border-t border-[var(--border-subtle)]">
                             {QUESTION_MODES.map(m => (
-                              <span key={m.id} className="px-1.5 py-0.5 rounded bg-black/60 text-[9px] text-slate-400">
+                              <span key={m.id} className="px-1.5 py-0.5 rounded glass-panel text-[9px] text-[var(--text-muted)]">
                                 {m.shortName}: {p.correctByType[m.id] || 0}
                               </span>
                             ))}
@@ -2350,7 +2478,7 @@ export default function App() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={initiateStartGame}
-                className="py-3 px-8 rounded-2xl font-bold text-slate-950 bg-gradient-to-r from-[#F5D77A] via-[#D4AF37] to-[#B8902B] hover:brightness-110 active:scale-[0.98] transition-all shadow-lg gold-glow cursor-pointer font-display text-base"
+                className="py-3 px-8 rounded-2xl font-bold btn-accent cursor-pointer font-display text-base"
               >
                 إعادة اللعب بنفس الإعدادات
               </button>
@@ -2358,18 +2486,18 @@ export default function App() {
               <button
                 onClick={() => {
                   if (gameMode === 'solo') {
-                    const msg = `حققتُ ${players[0].score} نقطة في ${soloQuestionsAnswered + 1} سؤالاً في تحدي الثلاثين! هل تستطيع كسر رقمي؟`;
+                    const msg = `🏆 تحدي الثلاثين (فردي):\nجمعتُ ${players[0].score} نقطة خلال ${soloFinalTimeSeconds} ثانية مع سلسلة ${players[0].bestStreak} إجابات متتالية! 🔥\nهل تستطيع كسر رقمي القياسي؟`;
                     handleShareGame(msg);
                   } else {
                     const sorted = [...players].sort((a, b) => b.score - a.score);
                     const winner = sorted[0];
-                    const msg = `فاز ${winner.name} بـ ${winner.score} نقطة في تحدي الثلاثين بين ${players.length} لاعبين! جرّب أن تهزمنا!`;
+                    const msg = `🏆 تحدي الثلاثين الثقافي:\nفاز [${winner.name}] برصيد ${winner.score} نقطة في منافسة بين ${players.length} لاعبين!\nأطول سلسلة إجابات: ${Math.max(...players.map(p => p.bestStreak))} إجابات متتالية 🔥\nجرّب التحدي الآن:`;
                     handleShareGame(msg);
                   }
                 }}
-                className="py-3 px-6 rounded-2xl bg-[#12121A] hover:bg-[#1A1A26] border border-[#D4AF37]/50 text-[#F5D77A] text-sm font-bold flex items-center justify-center gap-2 cursor-pointer gold-glow"
+                className="py-3 px-6 rounded-2xl glass-panel hover:border-[var(--border-accent)] text-[var(--accent-light)] text-sm font-bold flex items-center justify-center gap-2 cursor-pointer accent-glow"
               >
-                <Share2 className="w-4 h-4 text-[#D4AF37]" />
+                <Share2 className="w-4 h-4 text-[var(--accent-primary)]" />
                 <span>شارك النتيجة</span>
               </button>
 
@@ -2378,7 +2506,7 @@ export default function App() {
                   sounds.playClick();
                   setCurrentScreen('SETUP');
                 }}
-                className="py-3 px-6 rounded-2xl bg-[#12121A] hover:bg-[#1A1A26] border border-slate-800 text-slate-300 text-sm font-semibold cursor-pointer"
+                className="py-3 px-6 rounded-2xl glass-panel text-[var(--text-secondary)] text-sm font-semibold cursor-pointer hover:border-[var(--border-accent)]"
               >
                 تغيير الإعدادات
               </button>
@@ -2391,7 +2519,7 @@ export default function App() {
       {/* MODALS */}
       {/* ========================================================= */}
 
-      {/* SHARE MODAL */}
+      {/* SHARE MODAL (التعديل 3: ضبط SHARE_URL وميزات المشاركة) */}
       {isShareModalOpen && (
         <div 
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in"
@@ -2402,37 +2530,31 @@ export default function App() {
             if (e.target === e.currentTarget) setIsShareModalOpen(false);
           }}
         >
-          <div className="glass-card max-w-md w-full p-6 md:p-8 rounded-3xl border border-[#D4AF37]/40 shadow-2xl text-right animate-in zoom-in-95">
-            <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
+          <div className="glass-card max-w-md w-full p-6 md:p-8 rounded-3xl accent-glow text-right animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-[var(--border-subtle)]">
               <div className="flex items-center gap-2.5">
-                <Share2 className="w-5 h-5 text-[#D4AF37]" />
-                <h3 id="shareModalTitle" className="text-xl font-bold font-display gold-text-gradient">
-                  مشاركة اللعبة
+                <Share2 className="w-5 h-5 text-[var(--accent-primary)]" />
+                <h3 id="shareModalTitle" className="text-xl font-bold font-display accent-gradient-text">
+                  مشاركة اللعبة والنتيجة
                 </h3>
               </div>
               <button
                 onClick={() => setIsShareModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 cursor-pointer"
+                className="text-[var(--text-muted)] hover:text-[var(--text-main)] p-1 cursor-pointer text-lg font-bold"
                 aria-label="إغلاق نافذة المشاركة"
               >
                 ✕
               </button>
             </div>
 
-            {window.location.protocol === 'file:' && (
-              <div className="p-3 mb-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">
-                ⚠️ تنبيه: ارفع اللعبة على استضافة ليعمل الرابط عند الآخرين.
-              </div>
-            )}
-
-            <p className="text-xs text-slate-300 mb-4 leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] mb-4 leading-relaxed whitespace-pre-line p-3 rounded-xl glass-panel">
               {shareCustomText}
             </p>
 
             {/* Link Copy Box */}
             <div className="mb-6">
-              <label className="block text-[11px] font-bold text-[#F5D77A] mb-1.5">
-                رابط التحدي المباشر:
+              <label className="block text-[11px] font-bold text-[var(--accent-light)] mb-1.5">
+                رابط التحدي المعتمد:
               </label>
               <div className="flex gap-2">
                 <input
@@ -2440,13 +2562,13 @@ export default function App() {
                   readOnly
                   value={getComputedShareUrl()}
                   dir="ltr"
-                  className="flex-1 bg-[#0B0B12] border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 font-mono outline-none"
+                  className="flex-1 glass-panel rounded-xl px-3 py-2 text-xs text-[var(--text-secondary)] font-mono outline-none"
                 />
                 <button
                   onClick={handleCopyLink}
-                  className="px-4 py-2 rounded-xl bg-[#D4AF37] hover:brightness-110 text-slate-950 font-bold text-xs flex items-center gap-1.5 cursor-pointer flex-shrink-0"
+                  className="px-4 py-2 rounded-xl btn-accent font-bold text-xs flex items-center gap-1.5 cursor-pointer flex-shrink-0"
                 >
-                  {isCopied ? <CheckCheck className="w-4 h-4 text-slate-950" /> : <Copy className="w-4 h-4 text-slate-950" />}
+                  {isCopied ? <CheckCheck className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   <span>{isCopied ? 'تم النسخ ✓' : 'نسخ'}</span>
                 </button>
               </div>
@@ -2454,17 +2576,17 @@ export default function App() {
 
             {/* Social Share Buttons */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-400 mb-3">
-                المشاركة الفورية عبر التطبيقات:
+              <label className="block text-[11px] font-bold text-[var(--text-muted)] mb-3">
+                المشاركة السريعة عبر التطبيقات:
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <a
-                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(shareCustomText + '\n' + getComputedShareUrl())}`}
+                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(shareCustomText + '\n\n' + getComputedShareUrl())}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2.5 rounded-xl bg-[#12121A] hover:bg-emerald-950/60 border border-slate-800 hover:border-emerald-500/50 flex items-center justify-center gap-2 text-xs text-emerald-300 transition-all font-semibold"
+                  className="p-2.5 rounded-xl glass-panel hover:border-emerald-500/50 flex items-center justify-center gap-2 text-xs text-emerald-500 dark:text-emerald-300 transition-all font-semibold"
                 >
-                  <MessageCircle className="w-4 h-4 text-emerald-400" />
+                  <MessageCircle className="w-4 h-4 text-emerald-500" />
                   <span>واتساب</span>
                 </a>
 
@@ -2472,9 +2594,9 @@ export default function App() {
                   href={`https://t.me/share/url?url=${encodeURIComponent(getComputedShareUrl())}&text=${encodeURIComponent(shareCustomText)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2.5 rounded-xl bg-[#12121A] hover:bg-sky-950/60 border border-slate-800 hover:border-sky-500/50 flex items-center justify-center gap-2 text-xs text-sky-300 transition-all font-semibold"
+                  className="p-2.5 rounded-xl glass-panel hover:border-sky-500/50 flex items-center justify-center gap-2 text-xs text-sky-500 dark:text-sky-300 transition-all font-semibold"
                 >
-                  <Send className="w-4 h-4 text-sky-400" />
+                  <Send className="w-4 h-4 text-sky-500" />
                   <span>تيليجرام</span>
                 </a>
 
@@ -2482,28 +2604,10 @@ export default function App() {
                   href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareCustomText)}&url=${encodeURIComponent(getComputedShareUrl())}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2.5 rounded-xl bg-[#12121A] hover:bg-slate-800 border border-slate-800 hover:border-slate-500 flex items-center justify-center gap-2 text-xs text-slate-200 transition-all font-semibold"
+                  className="p-2.5 rounded-xl glass-panel hover:border-slate-500 flex items-center justify-center gap-2 text-xs text-[var(--text-main)] transition-all font-semibold"
                 >
-                  <ExternalLink className="w-4 h-4 text-slate-400" />
+                  <ExternalLink className="w-4 h-4 text-[var(--text-muted)]" />
                   <span>إكس (X)</span>
-                </a>
-
-                <a
-                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getComputedShareUrl())}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2.5 rounded-xl bg-[#12121A] hover:bg-blue-950/60 border border-slate-800 hover:border-blue-500/50 flex items-center justify-center gap-2 text-xs text-blue-300 transition-all font-semibold"
-                >
-                  <ExternalLink className="w-4 h-4 text-blue-400" />
-                  <span>فيسبوك</span>
-                </a>
-
-                <a
-                  href={`mailto:?subject=${encodeURIComponent('تحدي الثلاثين - لعبة المسابقات الفكرية')}&body=${encodeURIComponent(shareCustomText + '\n\n' + getComputedShareUrl())}`}
-                  className="p-2.5 rounded-xl bg-[#12121A] hover:bg-amber-950/60 border border-slate-800 hover:border-amber-500/50 flex items-center justify-center gap-2 text-xs text-amber-300 transition-all font-semibold sm:col-span-2"
-                >
-                  <Mail className="w-4 h-4 text-amber-400" />
-                  <span>البريد الإلكتروني</span>
                 </a>
               </div>
             </div>
@@ -2514,23 +2618,23 @@ export default function App() {
       {/* WAGER ROUND MODAL */}
       {wagerModalOpen && currentQuestion && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-card max-w-md w-full p-6 rounded-3xl border border-purple-500/40 text-center animate-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-purple-950/60 border-2 border-purple-400 flex items-center justify-center text-purple-300">
+          <div className="glass-card max-w-md w-full p-6 rounded-3xl text-center animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-purple-500/20 border-2 border-purple-400 flex items-center justify-center text-purple-300">
               <Zap className="w-8 h-8 text-yellow-300 animate-pulse" />
             </div>
-            <span className="text-xs font-bold text-purple-300 tracking-wider">
+            <span className="text-xs font-bold text-purple-400 dark:text-purple-300 tracking-wider">
               قرار تكتيكي قبل بدء السؤال
             </span>
-            <h3 className="text-2xl font-bold font-display text-white mt-1 mb-2">
+            <h3 className="text-2xl font-bold font-display text-[var(--text-main)] mt-1 mb-2">
               جولة الرهان (×2)
             </h3>
-            <p className="text-xs text-slate-300 mb-4 leading-relaxed">
-              الدور على <strong className={activeColor.text}>{activePlayer.name}</strong>.<br />
+            <p className="text-xs text-[var(--text-secondary)] mb-4 leading-relaxed">
+              الدور على <strong style={activeTheme.styleText}>{activePlayer.name}</strong>.<br />
               التصنيف: <strong>{currentQuestion.category}</strong> · النمط: <strong>{QUESTION_MODES.find(m => m.id === currentQuestion.type)?.name}</strong>
             </p>
 
-            <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-800/40 text-xs text-purple-200 mb-6">
-              الصحيح يمنح <strong className="text-yellow-300">+2 نقطة</strong> · والخطأ يخصم <strong className="text-rose-400">-2 نقطة</strong>
+            <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs text-purple-600 dark:text-purple-200 mb-6">
+              الصحيح يمنح <strong className="text-yellow-500 dark:text-yellow-300">+2 نقطة</strong> · والخطأ يخصم <strong className="text-rose-500">-2 نقطة</strong>
               {gameMode === 'solo' && ' وروحاً واحدة'}!<br />
               الرهانات المتبقية: <strong>{2 - activePlayer.bets} من 2</strong>
             </div>
@@ -2550,21 +2654,12 @@ export default function App() {
                 تفعيل الرهان ⚡
               </button>
               <button
-                onClick={() => {
-                  sounds.playClick();
-                  setIsCurrentQuestionWager(false);
-                  setWagerModalOpen(false);
-                }}
-                className="flex-1 py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs md:text-sm font-semibold cursor-pointer"
+                onClick={() => setWagerModalOpen(false)}
+                className="py-3 px-6 rounded-xl glass-panel text-xs md:text-sm font-semibold text-[var(--text-secondary)] cursor-pointer"
               >
-                لعب عادي (1 نقطة)
+                تخطي الرهان
               </button>
             </div>
-            {gameMode !== 'solo' && activePlayer.score < 2 && activePlayer.bets < 2 && (
-              <p className="text-[11px] text-amber-400 mt-2">
-                يتطلب الرهان رصيد نقطتين على الأقل للمخاطرة.
-              </p>
-            )}
           </div>
         </div>
       )}
@@ -2572,68 +2667,31 @@ export default function App() {
       {/* FRIEND CONSULTATION MODAL */}
       {isFriendModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-card max-w-sm w-full p-6 rounded-3xl border border-purple-500/50 text-center animate-in zoom-in-95">
-            <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-purple-900/40 border-2 border-purple-400 flex items-center justify-center">
-              <PhoneCall className="w-8 h-8 text-purple-300 animate-pulse" />
+          <div className="glass-card max-w-sm w-full p-6 rounded-3xl text-center animate-in zoom-in-95">
+            <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-sky-500/20 border-2 border-sky-400 flex items-center justify-center text-sky-400">
+              <PhoneCall className="w-8 h-8 animate-bounce" />
             </div>
-            <h3 className="text-xl font-bold font-display text-white mb-1">
+            <h3 className="text-xl font-bold font-display text-[var(--text-main)] mb-1">
               استشارة صديق
             </h3>
-            <p className="text-xs text-slate-300 mb-4">
-              المؤقت الرئيسي متوقف. لديكم 20 ثانية للنقاش!
+            <p className="text-xs text-[var(--text-muted)] mb-4">
+              ناقش صديقك أو فريقك الآن، وسيعود المؤقت الرئيسي للعمل فور انتهاء الوقت!
             </p>
-            <div className="text-5xl font-extrabold font-mono text-[#F5D77A] mb-6">
-              {friendTimeRemaining} <span className="text-sm font-sans">ث</span>
+
+            <div className="text-4xl font-black font-mono text-sky-500 dark:text-sky-300 mb-6">
+              {friendTimeRemaining} ث
             </div>
+
             <button
               onClick={() => {
                 sounds.playClick();
                 setIsFriendModalOpen(false);
                 resumeTimer();
               }}
-              className="w-full py-3 rounded-xl bg-[#D4AF37] text-slate-950 font-bold text-xs hover:brightness-110 cursor-pointer"
+              className="w-full py-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm cursor-pointer"
             >
-              إنهاء الاستشارة واستئناف السؤال
+              إنهاء الاستشارة والعودة للسؤال
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* RULES MODAL */}
-      {isRulesModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-card max-w-lg w-full p-6 md:p-8 rounded-3xl border border-[#D4AF37]/30 text-right max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
-              <h3 className="text-xl font-bold font-display gold-text-gradient">
-                قواعد وأنماط تحدي الثلاثين
-              </h3>
-              <button
-                onClick={() => setIsRulesModalOpen(false)}
-                className="text-slate-400 hover:text-white cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="text-xs md:text-sm text-slate-300 space-y-3 leading-relaxed">
-              <p><strong>1) أنماط اللاعبين:</strong><br/>
-                • <strong>فردي:</strong> 5 أرواح، خسارة روح عند الخطأ أو انتهاء الوقت، واستعادة روح عند السلسلة (+1). تسعى لـ 30 نقطة بأقل عدد أسئلة.<br/>
-                • <strong>فريقان / 3 / 4 لاعبين:</strong> تناوب دائري بالترتيب، رهان وسلسلة ووسائل لكل لاعب.<br/>
-                • <strong>إكمال الجولة:</strong> عند وصول أحدهم لـ 30 يُكمل باقي اللاعبين أدوارهم لضمان تكافؤ الفرص.<br/>
-                • <strong>الموت المفاجئ:</strong> عند التعادل في الصدارة، تقام جولة فاصلة بين المتعادلين فقط.
-              </p>
-              <p><strong>2) أنماط الأسئلة الستة:</strong> مباشر، اختيارات، صح أو خطأ، أكمل الناقص، المطابقة، وخمّن من التلميحات.</p>
-              <p><strong>3) الرهان (×2):</strong> رهانان لكل لاعب؛ الصحيح يضاعف النقاط والخطأ يخصم نقطتين (وروحاً في الفردي).</p>
-              <p><strong>4) السلسلة:</strong> 3 إجابات صحيحة متتالية تمنح +1 نقطة إضافية فوراً.</p>
-              <p><strong>5) الثيم:</strong> اضغط <strong>T</strong> لتبديل الثيم فوراً في أي لحظة.</p>
-            </div>
-            <div className="mt-6 pt-4 border-t border-slate-800 flex justify-end">
-              <button
-                onClick={() => setIsRulesModalOpen(false)}
-                className="py-2.5 px-6 rounded-xl bg-[#D4AF37] text-slate-950 font-bold text-xs hover:brightness-110 cursor-pointer"
-              >
-                فهمت، جاهزون!
-              </button>
-            </div>
           </div>
         </div>
       )}
@@ -2641,19 +2699,25 @@ export default function App() {
       {/* PAUSE MODAL */}
       {isPauseModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-card max-w-sm w-full p-6 rounded-3xl border border-[#D4AF37]/30 text-center">
-            <h3 className="text-xl font-bold font-display text-white mb-4">
+          <div className="glass-card max-w-sm w-full p-6 rounded-3xl text-center">
+            <div className="w-14 h-14 mx-auto mb-3 rounded-full glass-panel flex items-center justify-center text-[var(--accent-primary)]">
+              <Pause className="w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-bold font-display text-[var(--text-main)] mb-1">
               اللعبة متوقفة مؤقتاً
             </h3>
+            <p className="text-xs text-[var(--text-muted)] mb-6">
+              يمكنك أخذ استراحة واستئناف المؤقت في أي لحظة.
+            </p>
             <button
               onClick={() => {
                 sounds.playClick();
                 setIsPauseModalOpen(false);
                 resumeTimer();
               }}
-              className="w-full py-3 rounded-xl bg-[#D4AF37] text-slate-950 font-bold text-xs hover:brightness-110 cursor-pointer"
+              className="w-full py-3 rounded-xl btn-accent font-bold text-sm cursor-pointer"
             >
-              استئناف اللعب
+              استئناف التحدي
             </button>
           </div>
         </div>
@@ -2661,13 +2725,16 @@ export default function App() {
 
       {/* QUIT MODAL */}
       {isQuitModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-card max-w-sm w-full p-6 rounded-3xl border border-rose-500/30 text-center">
-            <h3 className="text-xl font-bold font-display text-white mb-2">
-              هل تريد إنهاء التحدي؟
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-card max-w-sm w-full p-6 rounded-3xl text-center">
+            <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center">
+              <ShieldAlert className="w-7 h-7" />
+            </div>
+            <h3 className="text-xl font-bold font-display text-[var(--text-main)] mb-1">
+              إنهاء المباراة الحالية؟
             </h3>
-            <p className="text-xs text-slate-400 mb-6">
-              سيتم إنهاء الجلسة والعودة للقائمة الرئيسية.
+            <p className="text-xs text-[var(--text-muted)] mb-6">
+              سيتم فقدان تقدم الجولة والعودة إلى شاشة الإعدادات.
             </p>
             <div className="flex gap-3">
               <button
@@ -2675,9 +2742,9 @@ export default function App() {
                   sounds.playClick();
                   stopTimer();
                   setIsQuitModalOpen(false);
-                  setCurrentScreen('SPLASH');
+                  setCurrentScreen('SETUP');
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white font-bold text-xs hover:bg-rose-500 cursor-pointer"
+                className="flex-1 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs cursor-pointer"
               >
                 تأكيد الخروج
               </button>
@@ -2687,14 +2754,95 @@ export default function App() {
                   setIsQuitModalOpen(false);
                   resumeTimer();
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-semibold text-xs hover:bg-slate-700 cursor-pointer"
+                className="flex-1 py-3 rounded-xl glass-panel text-[var(--text-secondary)] font-semibold text-xs cursor-pointer"
               >
-                إلغاء
+                إلغاء ومتابعة
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* RULES MODAL */}
+      {isRulesModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-card max-w-lg w-full p-6 md:p-8 rounded-3xl accent-glow text-right max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-[var(--border-subtle)]">
+              <div className="flex items-center gap-2">
+                <Award className="w-5 h-5 text-[var(--accent-primary)]" />
+                <h3 className="text-lg font-bold font-display accent-gradient-text">
+                  قواعد وأنماط تحدي الثلاثين
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsRulesModalOpen(false)}
+                className="text-[var(--text-muted)] hover:text-[var(--text-main)] p-1 cursor-pointer font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs md:text-sm text-[var(--text-secondary)] leading-relaxed">
+              <div>
+                <h4 className="font-bold text-[var(--accent-light)] mb-1">1) أنماط اللاعبين:</h4>
+                <p>
+                  • <strong>فردي (Solo):</strong> تبدأ بـ 5 أرواح ومهمتك بلوغ 30 نقطة قبل نفادها لتسجيل رقم قياسي شخصي.<br />
+                  • <strong>متعدد (فريقان، 3، 4 لاعبين):</strong> منافسة تبادلية بنظام الجولات، مع إمكانية تفعيل مبدأ تكافؤ الفرص في الجولة الأخيرة.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-[var(--accent-light)] mb-1">2) أنماط الأسئلة الستة:</h4>
+                <p>
+                  • <strong>سؤال مباشر:</strong> للمقدم والمناقشة الجماعية مع كشف الإجابة والتحكيم.<br />
+                  • <strong>اختيار من متعدد (MCQ):</strong> 4 خيارات بأحرف عربية واضحة.<br />
+                  • <strong>صح أو خطأ (T/F):</strong> إجابة فورية سريعة مع شرح تعليلي.<br />
+                  • <strong>أكمل الناقص:</strong> تخمين الكلمة أو العبارة المفقودة من بيت شعر أو مثل.<br />
+                  • <strong>المطابقة (Match):</strong> توصيل 4 أزواج متقابلة قبل انتهاء الوقت.<br />
+                  • <strong>خمّن من التلميحات:</strong> كشف تدريجي لخمسة تلميحات تنقص قيمتها نقطة مع كل كشف!
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-[var(--accent-light)] mb-1">3) وسائل المساعدة والرهان:</h4>
+                <p>
+                  • <strong>كشف الحرف / حذف خيارين:</strong> وسيلة مساعدة وحيدة لكل سؤال.<br />
+                  • <strong>وقت إضافي:</strong> إضافة 15 ثانية فورية للمؤقت.<br />
+                  • <strong>استشارة صديق:</strong> إيقاف اللعبة وفتح 20 ثانية للنقاش الهادئ.<br />
+                  • <strong>جولة الرهان (×2):</strong> فرصة مرتين في اللعبة لمضاعفة المكسب (+2) أو الخسارة (-2).
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-[var(--accent-light)] mb-1">4) سلسلة الإجابات (Streak):</h4>
+                <p>
+                  كل 3 إجابات صحيحة متتالية تمنح نقطة ذهبية بونص إضافية 🔥!
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setIsRulesModalOpen(false)}
+              className="w-full mt-6 py-3 rounded-xl btn-accent font-bold text-xs md:text-sm cursor-pointer"
+            >
+              فهمت القواعد، فلنبدأ!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Global Footer */}
+      <footer className="relative z-10 py-3 px-4 text-center text-xs text-[var(--text-muted)] border-t border-[var(--border-subtle)] flex items-center justify-between max-w-4xl mx-auto w-full">
+        <span>تحدي الثلاثين © 2026 - النسخة الثقافية المطوّرة</span>
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] font-medium hidden sm:inline">
+            اختصار الثيم: <kbd className="px-1.5 py-0.5 rounded glass-panel text-[10px] font-mono border border-[var(--border-subtle)]">T</kbd>
+          </span>
+          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+            {isOnline ? 'جاهز للاستخدام أوفلاين ✓' : 'وضع بدون إنترنت 📴'}
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -322,6 +322,22 @@ class SoundSystem {
       osc.stop(ctx.currentTime + idx * 0.05 + 0.26);
     });
   }
+
+  public playFanfare(): void {
+    this.playVictory();
+  }
+
+  public playStreakBonus(): void {
+    this.playStreak();
+  }
+
+  public playHeartLost(): void {
+    this.playWrong();
+  }
+
+  public playLifeline(): void {
+    this.playRevealLetter();
+  }
 }
 
 export const sounds = new SoundSystem();

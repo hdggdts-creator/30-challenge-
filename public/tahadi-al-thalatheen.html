@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="gold">
+<html lang="ar" dir="rtl" data-mode="dark" data-accent="gold">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -17,12 +17,27 @@
 
   <!-- Immediate Theme Initializer to Prevent Flash of Unstyled Theme -->
   <script>
-    try {
-      const savedTheme = localStorage.getItem('tahadi_theme');
-      if (savedTheme && ['gold', 'royal-blue', 'emerald'].includes(savedTheme)) {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-      }
-    } catch(e) {}
+    (function() {
+      try {
+        var mode = localStorage.getItem('tahadi_color_mode') || 'dark';
+        var accent = localStorage.getItem('tahadi_accent_color') || 'gold';
+        var legacy = localStorage.getItem('tahadi_theme');
+        if (legacy) {
+          if (['gold', 'royal-blue', 'emerald'].indexOf(legacy) !== -1) accent = legacy;
+          if (legacy === 'auto') mode = 'auto';
+        }
+        var resolvedMode = mode;
+        if (mode === 'auto') {
+          resolvedMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-mode', resolvedMode);
+        document.documentElement.setAttribute('data-accent', accent);
+        var meta = document.getElementById('metaThemeColor');
+        if (meta) {
+          meta.setAttribute('content', resolvedMode === 'light' ? '#FBF7EC' : '#07070B');
+        }
+      } catch(e) {}
+    })();
   </script>
 
   <!-- Google Fonts: Cairo (Questions & Body) + Reem Kufi (Titles & Display) -->
@@ -39,58 +54,86 @@
     }
 
     /* ========================================================
-       Theme Definitions via CSS Variables on :root & data-theme
+       Theme Definitions via CSS Variables on :root, data-mode, data-accent
        ======================================================== */
-    :root, [data-theme="gold"] {
+    :root, [data-mode="dark"] {
       --font-question: "Cairo", "Tajawal", system-ui, -apple-system, "Segoe UI", sans-serif;
       --bg-dark: #07070B;
+      --page-bg: #07070B;
       --bg-surface: #0E0E16;
       --bg-card: rgba(18, 18, 26, 0.85);
-      --accent-primary: #D4AF37;
-      --accent-light: #F5D77A;
-      --accent-dark: #B8902B;
       --text-main: #F1F5F9;
       --text-muted: #94A3B8;
-      --border-accent: rgba(212, 175, 55, 0.25);
-      --glow-accent: rgba(212, 175, 55, 0.35);
-      --pattern-color: %23D4AF37;
+      --timer-track: rgba(255, 255, 255, 0.1);
+      --pattern-opacity: 0.035;
       --theme-meta: #07070B;
     }
 
-    [data-theme="royal-blue"] {
+    [data-mode="light"] {
       --font-question: "Cairo", "Tajawal", system-ui, -apple-system, "Segoe UI", sans-serif;
-      --bg-dark: #060B1A;
-      --bg-surface: #0A132C;
-      --bg-card: rgba(15, 27, 61, 0.85);
+      --bg-dark: #FBF7EC;
+      --page-bg: linear-gradient(135deg, #FBF7EC 0%, #F6EEDB 50%, #EFE4CC 100%);
+      --bg-surface: #FFFFFF;
+      --bg-card: rgba(255, 255, 255, 0.9);
+      --text-main: #1E293B;
+      --text-muted: #64748B;
+      --timer-track: rgba(0, 0, 0, 0.08);
+      --pattern-opacity: 0.045;
+      --theme-meta: #FBF7EC;
+    }
+
+    [data-accent="gold"] {
+      --accent-primary: #D4AF37;
+      --accent-light: #F5D77A;
+      --accent-dark: #B8902B;
+      --border-accent: rgba(212, 175, 55, 0.3);
+      --glow-accent: rgba(212, 175, 55, 0.35);
+      --pattern-color: %23D4AF37;
+    }
+    [data-mode="light"][data-accent="gold"] {
+      --accent-primary: #B8860B;
+      --accent-light: #8C6200;
+      --accent-dark: #664400;
+      --border-accent: rgba(184, 134, 11, 0.3);
+      --glow-accent: rgba(184, 134, 11, 0.2);
+    }
+
+    [data-accent="royal-blue"] {
       --accent-primary: #6C8CFF;
       --accent-light: #C9D6FF;
       --accent-dark: #3B62E0;
-      --text-main: #F0F4FF;
-      --text-muted: #8DA2D4;
       --border-accent: rgba(108, 140, 255, 0.3);
       --glow-accent: rgba(108, 140, 255, 0.4);
       --pattern-color: %236C8CFF;
-      --theme-meta: #060B1A;
+    }
+    [data-mode="light"][data-accent="royal-blue"] {
+      --accent-primary: #2563EB;
+      --accent-light: #1D4ED8;
+      --accent-dark: #1E40AF;
+      --border-accent: rgba(37, 99, 235, 0.3);
+      --glow-accent: rgba(37, 99, 235, 0.2);
     }
 
-    [data-theme="emerald"] {
-      --font-question: "Cairo", "Tajawal", system-ui, -apple-system, "Segoe UI", sans-serif;
-      --bg-dark: #04120E;
-      --bg-surface: #071D17;
-      --bg-card: rgba(11, 42, 33, 0.85);
+    [data-accent="emerald"] {
       --accent-primary: #2ECC9A;
       --accent-light: #E8D48B;
       --accent-dark: #1B8E68;
-      --text-main: #F0FDF8;
-      --text-muted: #7AAFA0;
       --border-accent: rgba(46, 204, 154, 0.3);
       --glow-accent: rgba(46, 204, 154, 0.4);
       --pattern-color: %232ECC9A;
-      --theme-meta: #04120E;
+    }
+    [data-mode="light"][data-accent="emerald"] {
+      --accent-primary: #059669;
+      --accent-light: #047857;
+      --accent-dark: #065F46;
+      --border-accent: rgba(5, 150, 105, 0.3);
+      --glow-accent: rgba(5, 150, 105, 0.2);
     }
 
     body {
+      background: var(--page-bg);
       background-color: var(--bg-dark);
+      color: var(--text-main);
       color: var(--text-main);
       font-family: 'Cairo', system-ui, -apple-system, sans-serif;
       min-height: 100vh;
@@ -1437,7 +1480,7 @@
               <!-- مؤقت SVG الدائري -->
               <div id="timerContainer" style="position:relative; width:74px; height:74px; display:flex; align-items:center; justify-content:center;">
                 <svg width="74" height="74" style="transform:rotate(-90deg);">
-                  <circle cx="37" cy="37" r="31" stroke="rgba(255,255,255,0.08)" stroke-width="5" fill="transparent"/>
+                  <circle cx="37" cy="37" r="31" stroke="var(--timer-track)" stroke-width="5" fill="transparent"/>
                   <circle id="timerProgressCircle" cx="37" cy="37" r="31" stroke="var(--accent-primary)" stroke-width="5" fill="transparent"
                     stroke-dasharray="194.78" stroke-dashoffset="0" stroke-linecap="round" style="transition:stroke-dashoffset 0.08s linear, stroke 0.3s;"/>
                 </svg>

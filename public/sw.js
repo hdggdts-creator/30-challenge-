@@ -1,18 +1,17 @@
 /**
  * Service Worker for "تحدي الثلاثين" PWA
- * Version: tahaddi-v5
+ * Version: tahaddi-v6
  */
 
-const CACHE_NAME = 'tahaddi-v5';
+const CACHE_NAME = 'tahaddi-v6';
 const PRECACHE_ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
   './icon.svg',
-  './questions-1.js',
-  './questions-2.js',
   './questions.js',
-  './questions-extra.js'
+  './questions-extra.js',
+  './tahadi-al-thalatheen.html'
 ];
 
 self.addEventListener('install', (event) => {
@@ -60,11 +59,12 @@ self.addEventListener('fetch', (event) => {
       caches.open(CACHE_NAME).then((cache) => {
         return cache.match(event.request).then((cachedResponse) => {
           const fetchPromise = fetch(event.request).then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
+            if (networkResponse.status === 200) {
               cache.put(event.request, networkResponse.clone());
             }
             return networkResponse;
           }).catch(() => cachedResponse);
+
           return cachedResponse || fetchPromise;
         });
       })
@@ -72,10 +72,27 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // استراتيجية Cache-First مع العودة للشبكة للملفات الثابتة
+  // استراتيجية Cache-First لباقي الموارد الثابتة مع الرجوع للشبكة
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request);
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(event.request).then((response) => {
+        // تخزين نسخة من الموارد المحلية الصالحة تلقائياً
+        if (response && response.status === 200 && response.type === 'basic') {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return response;
+      }).catch(() => {
+        // في حالة عدم توفر الشبكة
+        if (event.request.destination === 'image') {
+          return caches.match('./icon.svg');
+        }
+      });
     })
   );
 });

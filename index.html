@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-theme="gold">
+<html lang="ar" dir="rtl" data-mode="dark" data-accent="gold">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -8,7 +8,7 @@
     
     <!-- PWA & Mobile Meta Tags -->
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#07070B" />
+    <meta name="theme-color" content="#07070B" id="metaThemeColor" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -20,8 +20,34 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Reem+Kufi:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Immediate Theme Initializer to Prevent Flash of Unstyled Theme -->
+    <script>
+      (function() {
+        try {
+          var mode = localStorage.getItem('tahadi_color_mode') || 'dark';
+          var accent = localStorage.getItem('tahadi_accent_color') || 'gold';
+          // Backward compatibility check for legacy theme
+          var legacy = localStorage.getItem('tahadi_theme');
+          if (legacy) {
+            if (['gold', 'royal-blue', 'emerald'].indexOf(legacy) !== -1) accent = legacy;
+            if (legacy === 'auto') mode = 'auto';
+          }
+          var resolvedMode = mode;
+          if (mode === 'auto') {
+            resolvedMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          document.documentElement.setAttribute('data-mode', resolvedMode);
+          document.documentElement.setAttribute('data-accent', accent);
+          var meta = document.getElementById('metaThemeColor');
+          if (meta) {
+            meta.setAttribute('content', resolvedMode === 'light' ? '#FBF7EC' : '#07070B');
+          }
+        } catch(e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-[#07070B] text-slate-100 min-h-screen select-none overflow-x-hidden">
+  <body class="min-h-screen select-none overflow-x-hidden">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>

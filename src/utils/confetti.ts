@@ -1,6 +1,25 @@
 /**
  * Canvas Confetti Particle System
+ * Adapts dynamically to CSS variables for mode and accent
  */
+
+function getThemeConfettiColors(): string[] {
+  try {
+    const computed = getComputedStyle(document.documentElement);
+    const primary = computed.getPropertyValue('--accent-primary').trim() || '#D4AF37';
+    const light = computed.getPropertyValue('--accent-light').trim() || '#F5D77A';
+    const dark = computed.getPropertyValue('--accent-dark').trim() || '#AA7C11';
+    const p1 = computed.getPropertyValue('--player-1-color').trim() || primary;
+    const p2 = computed.getPropertyValue('--player-2-color').trim() || '#38BDF8';
+    const p3 = computed.getPropertyValue('--player-3-color').trim() || '#10B981';
+    const p4 = computed.getPropertyValue('--player-4-color').trim() || '#C084FC';
+    const text = computed.getPropertyValue('--text-main').trim() || '#FFFFFF';
+
+    return [primary, light, dark, p1, p2, p3, p4, text];
+  } catch (e) {
+    return ['#D4AF37', '#F5D77A', '#38BDF8', '#10B981', '#C084FC'];
+  }
+}
 
 export function triggerConfetti(targetCanvas?: HTMLCanvasElement | null): () => void {
   let canvas = targetCanvas;
@@ -33,14 +52,13 @@ export function triggerConfetti(targetCanvas?: HTMLCanvasElement | null): () => 
     shape: 'circle' | 'rect';
   }> = [];
 
-  const colors = [
-    '#D4AF37', '#F5D77A', '#FFFFFF', '#B8902B', '#E5E7EB', 
-    '#F59E0B', '#38BDF8', '#34D399', '#EC4899', '#A855F7'
-  ];
+  const colors = getThemeConfettiColors();
 
   const updateSize = () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    if (canvas) {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
   };
   updateSize();
   window.addEventListener('resize', updateSize);
@@ -48,8 +66,8 @@ export function triggerConfetti(targetCanvas?: HTMLCanvasElement | null): () => 
   // Spawn initial burst
   for (let i = 0; i < 160; i++) {
     particles.push({
-      x: canvas.width / 2 + (Math.random() - 0.5) * 200,
-      y: canvas.height * 0.4 + (Math.random() - 0.5) * 100,
+      x: canvas.width / 2 + (Math.random() - 0.5) * 240,
+      y: canvas.height * 0.4 + (Math.random() - 0.5) * 120,
       size: Math.random() * 8 + 4,
       color: colors[Math.floor(Math.random() * colors.length)],
       vx: (Math.random() - 0.5) * 16,
@@ -61,14 +79,15 @@ export function triggerConfetti(targetCanvas?: HTMLCanvasElement | null): () => 
     });
   }
 
-  let startTime = Date.now();
+  const startTime = Date.now();
 
   const render = () => {
+    if (!canvas || !ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const elapsed = Date.now() - startTime;
 
     // Periodically add smaller secondary bursts
-    if (elapsed < 3000 && Math.random() < 0.2) {
+    if (elapsed < 3200 && Math.random() < 0.2) {
       for (let j = 0; j < 6; j++) {
         particles.push({
           x: Math.random() * canvas.width,
@@ -108,28 +127,36 @@ export function triggerConfetti(targetCanvas?: HTMLCanvasElement | null): () => 
       ctx.globalAlpha = Math.max(0, p.opacity);
       ctx.fillStyle = p.color;
 
-      if (p.shape === 'rect') {
-        ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size * 0.6);
-      } else {
+      if (p.shape === 'circle') {
         ctx.beginPath();
         ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
         ctx.fill();
+      } else {
+        ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size * 0.6);
       }
+
       ctx.restore();
     }
 
-    if (particles.length > 0 || elapsed < 5000) {
+    if (particles.length > 0) {
       animationFrameId = requestAnimationFrame(render);
+    } else {
+      if (created && canvas.parentNode) {
+        canvas.parentNode.removeChild(canvas);
+      }
     }
   };
 
   animationFrameId = requestAnimationFrame(render);
 
   return () => {
-    cancelAnimationFrame(animationFrameId);
     window.removeEventListener('resize', updateSize);
-    if (created && canvas) {
-      canvas.remove();
+    cancelAnimationFrame(animationFrameId);
+    if (ctx && canvas) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    if (created && canvas && canvas.parentNode) {
+      canvas.parentNode.removeChild(canvas);
     }
   };
 }
