@@ -1,0 +1,6 @@
+{
+  "name": "تحدي الثلاثين - النسخة الثقافية المطوّرة",
+  "description": "لعبة المسابقات الثقافية والمعلومات العامة للأفراد والفرق بنظام الثلاثين نقطة و6 أنماط أسئلة تفاعلية ومؤقت تنافسي فاخر",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

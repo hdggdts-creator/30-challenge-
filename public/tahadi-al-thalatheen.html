@@ -1,0 +1,2016 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="gold">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>تحدي الثلاثين - النسخة الثقافية والمعلومات العامة</title>
+  
+  <!-- PWA & Mobile Meta Tags -->
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#07070B" id="metaThemeColor">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="تحدي 30">
+  <link rel="apple-touch-icon" href="./icon.svg">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+
+  <!-- Immediate Theme Initializer to Prevent Flash of Unstyled Theme -->
+  <script>
+    try {
+      const savedTheme = localStorage.getItem('tahadi_theme');
+      if (savedTheme && ['gold', 'royal-blue', 'emerald'].includes(savedTheme)) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    } catch(e) {}
+  </script>
+
+  <!-- Google Fonts: Cairo (Questions & Body) + Reem Kufi (Titles & Display) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Reem+Kufi:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    /* Reset & Base */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ========================================================
+       Theme Definitions via CSS Variables on :root & data-theme
+       ======================================================== */
+    :root, [data-theme="gold"] {
+      --font-question: "Cairo", "Tajawal", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --bg-dark: #07070B;
+      --bg-surface: #0E0E16;
+      --bg-card: rgba(18, 18, 26, 0.85);
+      --accent-primary: #D4AF37;
+      --accent-light: #F5D77A;
+      --accent-dark: #B8902B;
+      --text-main: #F1F5F9;
+      --text-muted: #94A3B8;
+      --border-accent: rgba(212, 175, 55, 0.25);
+      --glow-accent: rgba(212, 175, 55, 0.35);
+      --pattern-color: %23D4AF37;
+      --theme-meta: #07070B;
+    }
+
+    [data-theme="royal-blue"] {
+      --font-question: "Cairo", "Tajawal", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --bg-dark: #060B1A;
+      --bg-surface: #0A132C;
+      --bg-card: rgba(15, 27, 61, 0.85);
+      --accent-primary: #6C8CFF;
+      --accent-light: #C9D6FF;
+      --accent-dark: #3B62E0;
+      --text-main: #F0F4FF;
+      --text-muted: #8DA2D4;
+      --border-accent: rgba(108, 140, 255, 0.3);
+      --glow-accent: rgba(108, 140, 255, 0.4);
+      --pattern-color: %236C8CFF;
+      --theme-meta: #060B1A;
+    }
+
+    [data-theme="emerald"] {
+      --font-question: "Cairo", "Tajawal", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --bg-dark: #04120E;
+      --bg-surface: #071D17;
+      --bg-card: rgba(11, 42, 33, 0.85);
+      --accent-primary: #2ECC9A;
+      --accent-light: #E8D48B;
+      --accent-dark: #1B8E68;
+      --text-main: #F0FDF8;
+      --text-muted: #7AAFA0;
+      --border-accent: rgba(46, 204, 154, 0.3);
+      --glow-accent: rgba(46, 204, 154, 0.4);
+      --pattern-color: %232ECC9A;
+      --theme-meta: #04120E;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow-x: hidden;
+      position: relative;
+      transition: background-color 0.4s ease, color 0.4s ease;
+    }
+
+    h1, h2, h3, .font-display {
+      font-family: 'Reem Kufi', 'Cairo', sans-serif;
+    }
+
+    /* Typography specific to Questions, Answers, and Hints */
+    .question-card {
+      font-family: var(--font-question);
+    }
+    .question-text {
+      font-family: var(--font-question);
+      font-weight: 700;
+      line-height: 1.8;
+      font-size: clamp(1.25rem, 2.2vw + 0.8rem, 2.4rem);
+      text-wrap: balance;
+      letter-spacing: 0;
+      color: var(--text-main);
+    }
+    .answer-text {
+      font-family: var(--font-question);
+      font-weight: 800;
+      letter-spacing: 0;
+      color: var(--accent-light);
+    }
+    .hint-text {
+      font-family: var(--font-question);
+      font-weight: 600;
+      letter-spacing: 0;
+      font-size: 0.95em;
+    }
+
+    /* Subtle Islamic Geometric Pattern with Dynamic Variable */
+    .bg-pattern {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23D4AF37' fill-rule='evenodd'%3E%3Cpath d='M40 0l10 10-10 10-10-10L40 0zm0 40l10 10-10 10-10-10L40 40zm-20-20l10 10-10 10-10-10L20 20zm40 0l10 10-10 10-10-10L60 20zM0 0h20v20H0V0zm60 0h20v20H60V0zM0 60h20v20H0V60zm60 0h20v20H60V60z'/%3E%3C/g%3E%3C/svg%3E");
+      z-index: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .accent-gradient-text {
+      background: linear-gradient(135deg, var(--accent-light) 0%, var(--accent-primary) 50%, var(--accent-dark) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .glass-box {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-accent);
+      border-radius: 20px;
+      transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    .accent-glow {
+      box-shadow: 0 0 25px -5px var(--glow-accent);
+    }
+    .accent-glow-lg {
+      box-shadow: 0 0 45px -5px var(--glow-accent);
+    }
+
+    /* Buttons */
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    button:active {
+      transform: scale(0.97);
+    }
+    button:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .btn-accent {
+      background: linear-gradient(135deg, var(--accent-light) 0%, var(--accent-primary) 50%, var(--accent-dark) 100%);
+      color: #07070B;
+      font-weight: 800;
+      border-radius: 14px;
+      padding: 14px 28px;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 20px var(--glow-accent);
+    }
+    .btn-accent:hover {
+      filter: brightness(1.1);
+    }
+
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-accent);
+      color: var(--text-main);
+      border-radius: 14px;
+      padding: 12px 24px;
+      font-weight: 600;
+    }
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--accent-primary);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      color: #FFFFFF;
+      font-weight: 800;
+      border-radius: 16px;
+      padding: 16px;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+    }
+    .btn-danger {
+      background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+      color: #FFFFFF;
+      font-weight: 800;
+      border-radius: 16px;
+      padding: 16px;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+    }
+
+    /* Container Layout */
+    .container {
+      width: 100%;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 16px;
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @keyframes pulseUrgent {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.85; }
+    }
+    .urgent-timer {
+      animation: pulseUrgent 0.6s infinite ease-in-out;
+    }
+
+    /* Flame Glow Animations for Streak */
+    @keyframes flamePulse {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px #F59E0B); }
+      50% { transform: scale(1.18); filter: drop-shadow(0 0 14px #EF4444); }
+    }
+    .flame-active {
+      display: inline-block;
+      animation: flamePulse 1s infinite ease-in-out;
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.84);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-box {
+      width: 100%;
+      max-width: 540px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-accent);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+      position: relative;
+    }
+
+    /* Circular Lifeline Button */
+    .lifeline-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1.5px solid var(--border-accent);
+      color: var(--accent-light);
+      position: relative;
+      transition: all 0.25s ease;
+    }
+    .lifeline-btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 15px var(--glow-accent);
+      transform: translateY(-2px);
+    }
+    .lifeline-btn.used {
+      opacity: 0.35;
+      background: rgba(0,0,0,0.4);
+      border-color: rgba(255,255,255,0.1);
+      color: #64748B;
+      cursor: not-allowed;
+    }
+
+    /* Theme Switcher Badges */
+    .theme-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .theme-dot:hover {
+      transform: scale(1.15);
+    }
+    .theme-dot.active {
+      outline: 2px solid #FFF;
+      outline-offset: 2px;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-dark); }
+    ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 9999px; }
+  </style>
+</head>
+<body>
+  <div class="bg-pattern"></div>
+  <canvas id="confettiCanvas" style="position:fixed; inset:0; pointer-events:none; z-index:90;"></canvas>
+
+  <div class="container" id="app">
+    <!-- Screen content dynamically mounted here by JavaScript -->
+  </div>
+
+  <footer style="position:relative; z-index:10; padding:12px; text-align:center; font-size:12px; color:var(--text-muted); border-top:1px solid var(--border-accent); display:flex; justify-content:space-between; align-items:center; max-width:960px; margin:0 auto; width:100%;">
+    <span>تحدي الثلاثين © 2026 - النسخة الثقافية والمعلومات العامة</span>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span id="pwaOfflineBadge" style="display:none; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:700; background:rgba(16,185,129,0.15); color:#34D399; border:1px solid rgba(16,185,129,0.3);">
+        ✓ تعمل بدون إنترنت
+      </span>
+      <span>150 سؤالاً موثقاً</span>
+    </div>
+  </footer>
+
+  <script>
+    // ==========================================
+    // 1) ثوابت اللعبة وقواعد التخصيص
+    // ==========================================
+    const TARGET_WIN_SCORE = 30; // حد الفوز بالنقاط
+    const QUESTION_TIMER_SECONDS = 30; // مدة المؤقت لكل سؤال بالثواني
+    const STREAK_THRESHOLD = 3; // عدد الإجابات المتتالية للحصول على نقطة إضافية
+    const BET_POINTS = 2; // نقاط الرهان (+2 للصح و -2 للخطأ)
+
+    // ==========================================
+    // 2) بنك الأسئلة الثقافية (150 سؤالاً موثقاً)
+    // ==========================================
+    const QUESTIONS_BANK = [
+      // --- تاريخ (15) ---
+      { id: 'h1', category: 'تاريخ', difficulty: 'easy', question: 'ما هي أقدم عاصمة مأهولة بالسكان بشكل مستمر في العالم حتى اليوم؟', answer: 'دمشق', hint: 'عاصمة عربية تقع في بلاد الشام' },
+      { id: 'h2', category: 'تاريخ', difficulty: 'easy', question: 'في أي قارة نشأت حضارة الإنكا القديمة وازدهرت؟', answer: 'أمريكا الجنوبية', hint: 'قارة جبال الأنديز وغابات الأمازون' },
+      { id: 'h3', category: 'تاريخ', difficulty: 'easy', question: 'ما هي الحضارة التي شيدت أهرامات الجيزة الخالدة؟', answer: 'الحضارة المصرية القديمة (الفراعنة)', hint: 'قامت على ضفاف نهر النيل' },
+      { id: 'h4', category: 'تاريخ', difficulty: 'medium', question: 'من هو القائد المسلم الذي قاد فتح بلاد الأندلس عام 711م؟', answer: 'طارق بن زياد', hint: 'سُمي جبل ومضيق باسمه' },
+      { id: 'h5', category: 'تاريخ', difficulty: 'medium', question: 'ما هي المدينة الرومانية التي دُفنت تحت رماد بركان فيزوف عام 79م؟', answer: 'بومبي (Pompeii)', hint: 'تقع في جنوب إيطاليا وتبدأ بحرف الباء' },
+      { id: 'h6', category: 'تاريخ', difficulty: 'medium', question: 'ما هي المعركة المفصلية التي أوقف فيها المسلمون زحف التتار عام 1260م؟', answer: 'معركة عين جالوت', hint: 'قاد جيش المسلمين السلطان سيف الدين قطز' },
+      { id: 'h7', category: 'تاريخ', difficulty: 'medium', question: 'في أي عام ميلادي انتهت الحرب العالمية الثانية رسمياً؟', answer: '1945م', hint: 'منتصف أربعينيات القرن العشرين' },
+      { id: 'h8', category: 'تاريخ', difficulty: 'medium', question: 'ما هو الجدار التاريخي الذي سقط عام 1989 معلناً قرب نهاية الحرب الباردة؟', answer: 'جدار برلين', hint: 'كان يفصل بين شطري العاصمة الألمانية' },
+      { id: 'h9', category: 'تاريخ', difficulty: 'hard', question: 'ما هو الاسم التاريخي لمدينة إسطنبول قبل فتحها العثماني عام 1453م؟', answer: 'القسطنطينية (بيزنطة)', hint: 'كانت عاصمة الإمبراطورية البيزنطية' },
+      { id: 'h10', category: 'تاريخ', difficulty: 'hard', question: 'من هو الملك البابلي صاحب أقدم مسلّة تشريعية مدونة في التاريخ؟', answer: 'حمورابي', hint: 'شريعة قانونية شهيرة تضم 282 مادة' },
+      { id: 'h11', category: 'تاريخ', difficulty: 'hard', question: 'ما هي الدولة الآسيوية التي يعود إليها فضل اختراع الورق والبارود والبوصلة والطباعة بالقوالب؟', answer: 'الصين', hint: 'حضارة سور الصين العظيم' },
+      { id: 'h12', category: 'تاريخ', difficulty: 'easy', question: 'ما هو اللقب الملكي الذي كان يحمله حكام مصر القديمة؟', answer: 'فرعون', hint: 'لُقّب به رمسيس وتحوتمس وإخناتون' },
+      { id: 'h13', category: 'تاريخ', difficulty: 'medium', question: 'في أي قرن ميلادي اندلعت الثورة الفرنسية وسقط سجن الباستيل (1789م)؟', answer: 'القرن الثامن عشر', hint: 'بين عامي 1700 و1799' },
+      { id: 'h14', category: 'تاريخ', difficulty: 'hard', question: 'ما هو الاسم التاريخي لشبكة الطرق البرية التجارية التي ربطت الصين بأوروبا؟', answer: 'طريق الحرير', hint: 'سُمي باسم المنسوج الفاخر' },
+      { id: 'h15', category: 'تاريخ', difficulty: 'hard', question: 'من هو الرحالة العربي الملقب بـ "أمير الرحالين" صاحب كتاب "تحفة النظار"؟', answer: 'ابن بطوطة', hint: 'ولد في طنجة بالمغرب في القرن 14' },
+
+      // --- جغرافيا (15) ---
+      { id: 'g1', category: 'جغرافيا', difficulty: 'easy', question: 'ما هو أطول نهر في العالم وفي قارة إفريقيا؟', answer: 'نهر النيل', hint: 'يمر بمصر والسودان ويصب في البحر المتوسط' },
+      { id: 'g2', category: 'جغرافيا', difficulty: 'easy', question: 'ما هي أكبر قارة في العالم من حيث المساحة وعدد السكان؟', answer: 'آسيا', hint: 'تضم الصين وروسيا والهند' },
+      { id: 'g3', category: 'جغرافيا', difficulty: 'easy', question: 'ما هي عاصمة سلطنة عُمان؟', answer: 'مسقط', hint: 'مدينة ساحلية عريقة تطل على بحر عُمان' },
+      { id: 'g4', category: 'جغرافيا', difficulty: 'medium', question: 'ما هو أكبر محيطات الكرة الأرضية من حيث المساحة؟', answer: 'المحيط الهادئ', hint: 'يغطي أكثر من ثلث مساحة كوكب الأرض' },
+      { id: 'g5', category: 'جغرافيا', difficulty: 'medium', question: 'ما هي أعلى قمة جبلية على سطح الكرة الأرضية؟', answer: 'قمة إفرست', hint: 'تقع في سلسلة جبال الهيمالايا' },
+      { id: 'g6', category: 'جغرافيا', difficulty: 'medium', question: 'ما هي أصغر دولة ذات سيادة في العالم من حيث المساحة؟', answer: 'الفاتيكان', hint: 'تقع بالكامل داخل العاصمة الإيطالية روما' },
+      { id: 'g7', category: 'جغرافيا', difficulty: 'medium', question: 'ما هو المضيق المائي الذي يفصل بين القارة الإفريقية وشبه الجزيرة الإيبيرية؟', answer: 'مضيق جبل طارق', hint: 'يربط البحر المتوسط بالمحيط الأطلسي' },
+      { id: 'g8', category: 'جغرافيا', difficulty: 'medium', question: 'ما هي الدولة العربية التي تقع جزرها بالكامل في المحيط الهندي؟', answer: 'جزر القمر', hint: 'عاصمتها موروني' },
+      { id: 'g9', category: 'جغرافيا', difficulty: 'hard', question: 'ما هو أكبر مسطح مائي داخلي ومغلق (بحيرة حبيسة) في العالم مساحةً؟', answer: 'بحر قزوين', hint: 'تطل عليه خمس دول منها إيران وروسيا' },
+      { id: 'g10', category: 'جغرافيا', difficulty: 'hard', question: 'ما هي الدولة التي تمتلك أكبر عدد مسجل من الجزر في العالم؟', answer: 'السويد', hint: 'دولة إسكندنافية عاصمتها ستوكهولم' },
+      { id: 'g11', category: 'جغرافيا', difficulty: 'hard', question: 'ما هو أعمق منخفض محيطي سحيق مكتشف على كوكب الأرض حتى الآن؟', answer: 'خندق ماريانا', hint: 'يقع غرب المحيط الهادئ ويصل لعمق 11 كم' },
+      { id: 'g12', category: 'جغرافيا', difficulty: 'easy', question: 'ما هي أكبر صحراء رملية حارة في العالم تمتد عبر شمال إفريقيا؟', answer: 'الصحراء الكبرى', hint: 'تمتد عبر مصر والجزائر والمغرب والسودان' },
+      { id: 'g13', category: 'جغرافيا', difficulty: 'medium', question: 'في أي دولة في أمريكا الجنوبية تقع شلالات إجوازو الشهيرة مع الأرجنتين؟', answer: 'البرازيل', hint: 'أكبر دولة في أمريكا الجنوبية' },
+      { id: 'g14', category: 'جغرافيا', difficulty: 'hard', question: 'ما هي العاصمة الفيدرالية الرسمية لكندا؟', answer: 'أوتاوا', hint: 'ليست تورونتو ولا مونتريال ولا فانكوفر' },
+      { id: 'g15', category: 'جغرافيا', difficulty: 'hard', question: 'ما هو المضيق الاستراتيجي الذي يربط مياه الخليج العربي بخليج عُمان وبحر العرب؟', answer: 'مضيق هرمز', hint: 'يفصل بين سلطنة عُمان وإيران' },
+
+      // --- علوم (15) ---
+      { id: 's1', category: 'علوم', difficulty: 'easy', question: 'ما هو الكوكب الأقرب إلى الشمس في نظامنا الشمسي؟', answer: 'عطارد', hint: 'كوكب صخري صغير وسريع الدوران' },
+      { id: 's2', category: 'علوم', difficulty: 'easy', question: 'ما هو الغاز الحيوي الأساسي الذي تتنفسه الكائنات الحية وتعتمد عليه في التنفس الخلوي؟', answer: 'الأكسجين', hint: 'رمزه الكيميائي O' },
+      { id: 's3', category: 'علوم', difficulty: 'easy', question: 'ما هو العضو العضلي الرئيسي المسؤول عن ضخ وتوزيع الدم في جسم الإنسان؟', answer: 'القلب', hint: 'ينبض باستمرار في القفص الصدري' },
+      { id: 's4', category: 'علوم', difficulty: 'medium', question: 'ما هو العنصر الكيميائي الأكثر وفرة وانتشاراً في الكون بأسره؟', answer: 'الهيدروجين', hint: 'رمزه H وهو أبسط وأخف ذرة' },
+      { id: 's5', category: 'علوم', difficulty: 'medium', question: 'كم تبلغ سرعة الضوء التقريبية في الفراغ بالكيلومتر في الثانية الواحدة؟', answer: '300,000 كم/ثانية (300 ألف)', hint: 'ثلاثمائة ألف كيلومتر في الثانية' },
+      { id: 's6', category: 'علوم', difficulty: 'medium', question: 'ما هو المعدن الوحيد الذي يبقى في الحالة السائلة في درجة حرارة الغرفة العادية؟', answer: 'الزئبق', hint: 'رمزه Hg ويستخدم في موازين الحرارة' },
+      { id: 's7', category: 'علوم', difficulty: 'medium', question: 'ما هي الوحدة البنائية والوظيفية الأساسية الصغرى في تركيب جميع الكائنات الحية؟', answer: 'الخلية', hint: 'قد تكون وحيدة أو متعددة' },
+      { id: 's8', category: 'علوم', difficulty: 'medium', question: 'ما هو أكبر عضو في جسم الإنسان من حيث الوزن والمساحة السطحية؟', answer: 'الجلد', hint: 'يغطي الجسم الخارجي بالكامل' },
+      { id: 's9', category: 'علوم', difficulty: 'hard', question: 'ما هي الجسيمات دون الذرية سالبة الشحنة التي تدور حول نواة الذرة؟', answer: 'الإلكترونات', hint: 'كتلتها ضئيلة جداً مقارنة بالبروتونات' },
+      { id: 's10', category: 'علوم', difficulty: 'hard', question: 'ما هو الجزيء الحيوي المسؤول عن حمل وتشفير الصفات والتعليمات الوراثية في الخلايا؟', answer: 'الحمض النووي (DNA)', hint: 'يتخذ شكل لولب مزدوج شهير' },
+      { id: 's11', category: 'علوم', difficulty: 'hard', question: 'ما هو الغاز الدفيء الرئيسي المنبعث من الوقود والمسؤول الأول عن الاحتباس الحراري؟', answer: 'ثاني أكسيد الكربون (CO2)', hint: 'تطلقه الكائنات بالزفير وتمتصه النباتات' },
+      { id: 's12', category: 'علوم', difficulty: 'easy', question: 'ما هي الحالة الفيزيائية للماء عند درجة حرارة 120 درجة مئوية تحت الضغط الجوي العادي؟', answer: 'الحالة الغازية (بخار)', hint: 'درجة غليان الماء الطبيعية هي 100 مئوية' },
+      { id: 's13', category: 'علوم', difficulty: 'medium', question: 'ما هو الكوكب في مجموعتنا الشمسية الذي يُلقب بـ "الكوكب الأحمر"؟', answer: 'المريخ', hint: 'بسبب انتشار أكسيد الحديد على سطحه' },
+      { id: 's14', category: 'علوم', difficulty: 'hard', question: 'من هو العالم الفيزيائي الذي صاغ النظرية النسبية الخاصة والعامة؟', answer: 'ألبرت أينشتاين', hint: 'صاحب معادلة الطاقة E = mc²' },
+      { id: 's15', category: 'علوم', difficulty: 'hard', question: 'ما هو الطائر الوحيد القادر على الطيران إلى الخلف؟', answer: 'طائر الطنان', hint: 'طائر دقيق الحجم وسريع خفقان الجناحين' },
+
+      // --- ثقافة إسلامية (15) ---
+      { id: 'i1', category: 'ثقافة إسلامية', difficulty: 'easy', question: 'كم عدد سور القرآن الكريم؟', answer: '114 سورة', hint: 'تبدأ بالفاتحة وتختتم بالناس' },
+      { id: 'i2', category: 'ثقافة إسلامية', difficulty: 'easy', question: 'ما هي أول قبلة توجه إليها المسلمون في صلاتهم قبل تحويلها إلى المسجد الحرام؟', answer: 'المسجد الأقصى (القدس الشريف)', hint: 'ثالث الحرمين الشريفين' },
+      { id: 'i3', category: 'ثقافة إسلامية', difficulty: 'easy', question: 'ما هي السورة القرآنية التي تُلقب بـ "أم الكتاب" و"السبع المثاني"؟', answer: 'سورة الفاتحة', hint: 'أول سورة في ترتيب المصحف' },
+      { id: 'i4', category: 'ثقافة إسلامية', difficulty: 'medium', question: 'من هو أول الخلفاء الراشدين رضي الله عنه وصاحب رسول الله ﷺ في الغار؟', answer: 'أبو بكر الصديق', hint: 'عبد الله بن أبي قحافة رضي الله عنه' },
+      { id: 'i5', category: 'ثقافة إسلامية', difficulty: 'medium', question: 'كم عدد أركان الإسلام الخمسة كما وردت في الحديث النبوي الشريف؟', answer: 'خمسة أركان', hint: 'شهادتان، صلاة، زكاة، صوم، وحج' },
+      { id: 'i6', category: 'ثقافة إسلامية', difficulty: 'medium', question: 'ما هي أطول سورة في القرآن الكريم والتي تشتمل على آية الكرسي وآية الدين؟', answer: 'سورة البقرة', hint: 'السورة الثانية في المصحف الشريف' },
+      { id: 'i7', category: 'ثقافة إسلامية', difficulty: 'medium', question: 'من هو القائد والصحابي الجليل الذي لقبه النبي ﷺ بـ "سيف الله المسلول"؟', answer: 'خالد بن الوليد رضي الله عنه', hint: 'قائد معركتي اليرموك والولجة' },
+      { id: 'i8', category: 'ثقافة إسلامية', difficulty: 'medium', question: 'في أي شهر هجري يؤدي المسلمون فريضة الحج والوقوف بعرفة؟', answer: 'شهر ذو الحجة', hint: 'الشهر الثاني عشر والأخير في السنة الهجرية' },
+      { id: 'i9', category: 'ثقافة إسلامية', difficulty: 'hard', question: 'ما هي السورة القرآنية الوحيدة التي لا تبدأ بـ "بسم الله الرحمن الرحيم"؟', answer: 'سورة التوبة (براءة)', hint: 'سورة مدنية تقع في الجزء العاشر' },
+      { id: 'i10', category: 'ثقافة إسلامية', difficulty: 'hard', question: 'من هو الخليفة الراشدي الذي أمر بجمع القرآن الكريم في مصحف إمام واحد ونشره في الأمصار؟', answer: 'عثمان بن عفان رضي الله عنه', hint: 'ذو النورين وثالث الخلفاء الراشدين' },
+      { id: 'i11', category: 'ثقافة إسلامية', difficulty: 'hard', question: 'ما هي المعركة الكبرى الأولى الفاصلة بين المسلمين وقريش في السنة الثانية للهجرة؟', answer: 'غزوة بدر الكبرى', hint: 'سماها القرآن الكريم "يوم الفرقان"' },
+      { id: 'i12', category: 'ثقافة إسلامية', difficulty: 'easy', question: 'ما اسم الغار الذي كان يتعبد فيه النبي ﷺ بمكة ونزل عليه فيه أول الوحي؟', answer: 'غار حراء', hint: 'يقع في أعلى جبل النور' },
+      { id: 'i13', category: 'ثقافة إسلامية', difficulty: 'medium', question: 'من هو الصحابي الذي أشار على رسول الله ﷺ بحفر الخندق في غزوة الأحزاب؟', answer: 'سلمان الفارسي رضي الله عنه', hint: 'صحابي جليل أصله من بلاد فارس' },
+      { id: 'i14', category: 'ثقافة إسلامية', difficulty: 'hard', question: 'ما هي السورة القرآنية التي ذُكرت فيها البسملة مرتين اثنتين؟', answer: 'سورة النمل', hint: 'وردت في الآية: إنه من سليمان وإنه بسم الله الرحمن الرحيم' },
+      { id: 'i15', category: 'ثقافة إسلامية', difficulty: 'hard', question: 'ما هي أعظم آية في كتاب الله الكريم كما أخبر النبي ﷺ أُبي بن كعب؟', answer: 'آية الكرسي', hint: 'الآية رقم 255 من سورة البقرة' },
+
+      // --- أدب وشعر عربي (15) ---
+      { id: 'l1', category: 'أدب وشعر عربي', difficulty: 'easy', question: 'من هو الشاعر العباسي الفذ صاحب البيت: "الخيلُ والليلُ والبيداءُ تعرفني... والرمحُ والقرطاسُ والقلمُ"؟', answer: 'أبو الطيب المتنبي', hint: 'أحمد بن الحسين، أشهر شعراء العرب' },
+      { id: 'l2', category: 'أدب وشعر عربي', difficulty: 'easy', question: 'ما هو العمل الأدبي التراثي الشهير الذي يروي حكايات شهرزاد مع الملك شهريار؟', answer: 'ألف ليلة وليلة', hint: 'يضم حكايات السندباد وعلي بابا' },
+      { id: 'l3', category: 'أدب وشعر عربي', difficulty: 'easy', question: 'من هو الشاعر المصري الكبير الملقب بـ "أمير الشعراء" في العصر الحديث؟', answer: 'أحمد شوقي', hint: 'صاحب مسرحيات مجنون ليلى ومصرع كليوباترا' },
+      { id: 'l4', category: 'أدب وشعر عربي', difficulty: 'medium', question: 'ماذا تُسمى القصائد الطوال المذهبة التي علقها العرب على جدران الكعبة لجودتها؟', answer: 'المعلقات', hint: 'عددها سبع أو عشر قصائد جاهلية' },
+      { id: 'l5', category: 'أدب وشعر عربي', difficulty: 'medium', question: 'من هو الشاعر الجاهلي صاحب المعلقة التي مطلعها: "قِفا نَبكِ مِن ذِكرى حَبيبٍ وَمَنزِلِ"؟', answer: 'امرؤ القيس', hint: 'يُلقب بالملك الضليل' },
+      { id: 'l6', category: 'أدب وشعر عربي', difficulty: 'medium', question: 'من هو الفقيه والأديب الأندلسي صاحب كتاب "طوق الحمامة في الأُلفة والأُلاّف"؟', answer: 'ابن حزم الأندلسي', hint: 'عالم قرطبي كبير من أئمة المذهب الظاهري' },
+      { id: 'l7', category: 'أدب وشعر عربي', difficulty: 'medium', question: 'من هو الروائي والأديب العربي الحائز على جائزة نوبل في الأدب عام 1988؟', answer: 'نجيب محفوظ', hint: 'عميد الرواية العربية وصاحب الثلاثية' },
+      { id: 'l8', category: 'أدب وشعر عربي', difficulty: 'medium', question: 'من هو الشاعر الفلسطيني الملقب بشاعر الأرض وصاحب "سجل أنا عربي"؟', answer: 'محمود درويش', hint: 'من أبرز رواد الشعر العربي الحديث' },
+      { id: 'l9', category: 'أدب وشعر عربي', difficulty: 'hard', question: 'من هو الشاعر والفيلسوف العباسي الضرير الملقب بـ "رهين المحبسين"؟', answer: 'أبو العلاء المعري', hint: 'حبس العمى وحبس البيت في معرة النعمان' },
+      { id: 'l10', category: 'أدب وشعر عربي', difficulty: 'hard', question: 'من هو الأديب العباسي البليغ الذي ترجم كتاب "كليلة ودمنة" الخالد إلى العربية؟', answer: 'عبد الله بن المقفع', hint: 'أديب بليغ في العصر العباسي الأول' },
+      { id: 'l11', category: 'أدب وشعر عربي', difficulty: 'hard', question: 'من هو حكيم شعراء الجاهلية وصاحب الحوليات ومعلقته: "سَئِمتُ تَكاليفَ الحَياةِ"؟', answer: 'زهير بن أبي سُلمى', hint: 'شاعر جاهلي عرف بنبذ الحروب والحكمة' },
+      { id: 'l12', category: 'أدب وشعر عربي', difficulty: 'easy', question: 'من هو الشاعر التونسي صاحب البيت: "إذا الشعبُ يوماً أراد الحياة... فلا بدّ أن يستجيبَ القدر"؟', answer: 'أبو القاسم الشابي', hint: 'شاعر الخضراء وصاحب ديوان أغاني الحياة' },
+      { id: 'l13', category: 'أدب وشعر عربي', difficulty: 'medium', question: 'من هو المبتكر الأول لفن "المقامات" في الأدب العربي وبطل مقاماته عيسى بن هشام؟', answer: 'بديع الزمان الهمذاني', hint: 'أديب عباسي برع في السجع والنثر الفني' },
+      { id: 'l14', category: 'أدب وشعر عربي', difficulty: 'hard', question: 'ما هو اسم الموسوعة الأدبية والغنائية الضخمة التي صنفها أبو الفرج الأصفهاني؟', answer: 'كتاب الأغاني', hint: 'استغرق 50 عاماً في جمعه في 24 مجلداً' },
+      { id: 'l15', category: 'أدب وشعر عربي', difficulty: 'hard', question: 'ما هو لقب الشاعرة تماضر بنت عمرو التي اشتهرت برثائها الباكي لأخيها صخر؟', answer: 'الخنساء', hint: 'شاعرة مخضرمة عاصرت الجاهلية والإسلام' },
+
+      // --- فنون وسينما (15) ---
+      { id: 'a1', category: 'فنون وسينما', difficulty: 'easy', question: 'من هو الرسام الإيطالي في عصر النهضة الذي رسم لوحة "الموناليزا" الشهيرة؟', answer: 'ليوناردو دا فينشي', hint: 'رسم أيضاً لوحة العشاء الأخير' },
+      { id: 'a2', category: 'فنون وسينما', difficulty: 'easy', question: 'ما هي أرفع جائزة سينمائية عالمية تقدمها أكاديمية فنون وعلوم الصور المتحركة سنوياً؟', answer: 'جائزة الأوسكار (Oscar)', hint: 'تمثال ذهبي صغير وشهير' },
+      { id: 'a3', category: 'فنون وسينما', difficulty: 'easy', question: 'ما هي الآلة الوترية الشرقية التقليدية التي تُلقب بسلطان الآلات الموسيقية؟', answer: 'العود', hint: 'آلة ذات صندوق كمثري الشكل تعزف بريشة' },
+      { id: 'a4', category: 'فنون وسينما', difficulty: 'medium', question: 'من هو الملحن المصري الرائد الملقب بـ "فنان الشعب" ومؤلف نشيد "بلادي بلادي"؟', answer: 'سيد درويش', hint: 'مجدد الموسيقى وباعث نهضتها الحديثة' },
+      { id: 'a5', category: 'فنون وسينما', difficulty: 'medium', question: 'ما هي المدينة الفرنسية التي تحتضن سنوياً أشهر مهرجان سينمائي يمنح "السعفة الذهبية"؟', answer: 'كان (Cannes)', hint: 'مدينة ساحلية على الريفييرا الفرنسية' },
+      { id: 'a6', category: 'فنون وسينما', difficulty: 'medium', question: 'من هو الرسام الهولندي صاحب اللوحة الشهيرة "ليلة مرصعة بالنجوم"؟', answer: 'فينسنت فان غوخ', hint: 'رسم أيضاً سلسلة دوار الشمس' },
+      { id: 'a7', category: 'فنون وسينما', difficulty: 'medium', question: 'ما هي الدولة الآسيوية التي نشأ فيها وتطور فن الرسوم المتحركة "الأنمي"؟', answer: 'اليابان', hint: 'موطن استوديو غيبلي والمخرج ميازاكي' },
+      { id: 'a8', category: 'فنون وسينما', difficulty: 'medium', question: 'من هي المطربة السورية الراحلة شقيقة الفنان فريد الأطرش صاحبة أغنية "يا طيور"؟', answer: 'أسمهان (آمال الأطرش)', hint: 'صاحبة صوت أوبرالي شرقي خارق' },
+      { id: 'a9', category: 'فنون وسينما', difficulty: 'hard', question: 'ما هو المصطلح الفني للزخارف الهندسية والنباتية المتشابكة في العمارة الإسلامية؟', answer: 'الأرابيسك (الرقش العربي)', hint: 'يزين جدران المساجد والقصور الإسلامية' },
+      { id: 'a10', category: 'فنون وسينما', difficulty: 'hard', question: 'من هو المخرج السينمائي المصري صاحب أفلام "باب الحديد" و"الأرض" و"المصير"؟', answer: 'يوسف شاهين', hint: 'حائز جائزة اليوبيل الذهبي لمهرجان كان' },
+      { id: 'a11', category: 'فنون وسينما', difficulty: 'hard', question: 'ما هو اسم اللوحة التكعيبية الضخمة لبيكاسو التي جسد فيها أهوال قصف بلدة إسبانية؟', answer: 'غيرنيكا (Guernica)', hint: 'رسمت بالأبيض والأسود والرمادي عام 1937' },
+      { id: 'a12', category: 'فنون وسينما', difficulty: 'easy', question: 'ما هو اللون الناتج عن مزج اللونين الأساسيين الأزرق والأصفر بالتساوي؟', answer: 'الأخضر', hint: 'لون الطبيعة والغطاء النباتي' },
+      { id: 'a13', category: 'فنون وسينما', difficulty: 'medium', question: 'من هو الموسيقار الألماني العظيم الذي أبدع السيمفونية التاسعة رغم فقدانه للسمع؟', answer: 'لودفيج فان بيتهوفن', hint: 'مؤلف "من أجل إليز" والسنفونية الخامسة' },
+      { id: 'a14', category: 'فنون وسينما', difficulty: 'hard', question: 'ما هو الفيلم الخيالي الملحمي الذي حصد 11 جائزة أوسكار كاملة عام 2004 معادلاً الرقم القياسي؟', answer: 'سيد الخواتم: عودة الملك (The Lord of the Rings)', hint: 'الجزء الثالث من ثلاثية المخرج بيتر جاكسون' },
+      { id: 'a15', category: 'فنون وسينما', difficulty: 'hard', question: 'ما هو المقام الموسيقي الشرقي الذي يُعد "أبو المقامات" وتعني كلمته الاستقامة؟', answer: 'مقام الراست', hint: 'يبدأ من درجة دو ويحتوي على ربع التون' },
+
+      // --- تقنية (15) ---
+      { id: 't1', category: 'تقنية', difficulty: 'easy', question: 'ما هو نظام التشغيل مفتوح المصدر الذي طور نواته لينوس تورفالدس؟', answer: 'لينكس (Linux)', hint: 'يتخذ البطريق تكس شعاراً له' },
+      { id: 't2', category: 'تقنية', difficulty: 'easy', question: 'ما هي الشركة التكنولوجية العملاقة المطورة لنظام تشغيل الهواتف "أندرويد"؟', answer: 'جوجل (Google)', hint: 'أكبر محرك بحث في العالم' },
+      { id: 't3', category: 'تقنية', difficulty: 'easy', question: 'ما هو الاختصار الإنجليزي المكون من 3 أحرف لشبكة الويب العالمية؟', answer: 'WWW (World Wide Web)', hint: 'يسبق الروابط في متصفح الإنترنت' },
+      { id: 't4', category: 'تقنية', difficulty: 'medium', question: 'ما هي لغة البرمجة القياسية المستخدمة لإضافة التفاعلية والحيوية داخل متصفحات الويب؟', answer: 'جافاسكريبت (JavaScript)', hint: 'تُختصر بـ JS' },
+      { id: 't5', category: 'تقنية', difficulty: 'medium', question: 'ما هي التقنية اللامركزية المعتمدة على سلاسل الكتل المشفرة وتعمل بها العملات الرقمية؟', answer: 'البلوكشين (Blockchain)', hint: 'سجل موزع ومقاوم للتعديل' },
+      { id: 't6', category: 'تقنية', difficulty: 'medium', question: 'من هو المؤسس المشارك لشركة أبل الذي أحدث ثورة بإطلاق أول آيفون عام 2007؟', answer: 'ستيف جوبز (Steve Jobs)', hint: 'رائد ثورة الهواتف والحواسيب الشخصية' },
+      { id: 't7', category: 'تقنية', difficulty: 'medium', question: 'ما هي أصغر وحدة لقياس وتخزين البيانات الرقمية في علوم الحاسوب (0 أو 1)؟', answer: 'البت (Bit)', hint: 'كل 8 وحدات منها تكوّن بايتاً واحداً' },
+      { id: 't8', category: 'تقنية', difficulty: 'medium', question: 'ما هو الاختصار المكون من حرفين لمصطلح "الذكاء الاصطناعي" بالإنجليزية؟', answer: 'AI (Artificial Intelligence)', hint: 'يبدأ بـ A ويليه I' },
+      { id: 't9', category: 'تقنية', difficulty: 'hard', question: 'ما هو بروتوكول نقل النص الفائق الآمن المشفر المستخدم لتأمين اتصال المتصفح بالمواقع؟', answer: 'HTTPS', hint: 'يحمل حرف S دلالة على الأمان والحماية' },
+      { id: 't10', category: 'تقنية', difficulty: 'hard', question: 'من هو العالم الإنجليزي الملقب بأبي علوم الحاسوب وصاحب اختبار الذكاء الشهير؟', answer: 'آلان تورنغ (Alan Turing)', hint: 'كسر شفرة آلة الإنجما الألمانية' },
+      { id: 't11', category: 'تقنية', difficulty: 'hard', question: 'ما اسم أول شبكة حواسيب مترابطة أنشأتها وزارة الدفاع الأمريكية عام 1969؟', answer: 'أربانت (ARPANET)', hint: 'تطورت لاحقاً لتصبح شبكة الإنترنت' },
+      { id: 't12', category: 'تقنية', difficulty: 'easy', question: 'ما هي الشريحة الأساسية في الحاسوب التي تُلقب بـ "عقل الحاسوب"؟', answer: 'المعالج المركزي (CPU)', hint: 'وحدة المعالجة المركزية Central Processing Unit' },
+      { id: 't13', category: 'تقنية', difficulty: 'medium', question: 'ما هي الشركة المطورة لمحرك الألعاب Unreal Engine ولعبة فورتنايت؟', answer: 'إيبك جيمز (Epic Games)', hint: 'شركة أمريكية رائدة في صناعة الألعاب' },
+      { id: 't14', category: 'تقنية', difficulty: 'hard', question: 'ما هي لغة صفحات الأنماط المسؤولة عن تنسيق مظهر وألوان وخطوط صفحات الويب؟', answer: 'CSS (Cascading Style Sheets)', hint: 'اختصار من ثلاثة أحرف' },
+      { id: 't15', category: 'تقنية', difficulty: 'hard', question: 'ما هو اسم نموذج الذكاء الاصطناعي التوليدي الرائد لشركة جوجل؟', answer: 'جيميني (Gemini)', hint: 'اسم يعبر عن برج الجوزاء فلكياً' },
+
+      // --- لغة عربية (15) ---
+      { id: 'ar1', category: 'لغة عربية', difficulty: 'easy', question: 'كم عدد الحروف الهجائية الرسمية في اللغة العربية؟', answer: '28 حرفاً', hint: 'تبدأ بالألف وتنتهي بالياء' },
+      { id: 'ar2', category: 'لغة عربية', difficulty: 'easy', question: 'ما هو الحرف الذي تنفرد به اللغة العربية دون سائر لغات العالم وتُلقب باسمه؟', answer: 'حرف الضاد', hint: 'تُعرف العربية بلغة الضاد' },
+      { id: 'ar3', category: 'لغة عربية', difficulty: 'easy', question: 'ما هي علامة الرفع الإعرابية الأصلية للأسماء المفردة في النحو؟', answer: 'الضمة', hint: 'حركة تشبه الواو الصغيرة فوق الحرف' },
+      { id: 'ar4', category: 'لغة عربية', difficulty: 'medium', question: 'ما هو المصطلح البلاغي المقابل والمعاكس تماماً لمصطلح "الإيجاز"؟', answer: 'الإطناب (أو الإسهاب)', hint: 'بسط الكلام وأداء المعنى بألفاظ زائدة لفائدة' },
+      { id: 'ar5', category: 'لغة عربية', difficulty: 'medium', question: 'ما هو جمع كلمة "امرأة" في اللغة العربية من غير لفظها ومفردها؟', answer: 'نِساء (أو نِسوة)', hint: 'اسم جمع لا مفرد له من لفظه' },
+      { id: 'ar6', category: 'لغة عربية', difficulty: 'medium', question: 'ما هو المعجم اللغوي العربي الموسوعي الشهير الذي ألفه العلامة ابن منظور؟', answer: 'لسان العرب', hint: 'أضخم معاجم اللغة العربية وأشملها' },
+      { id: 'ar7', category: 'لغة عربية', difficulty: 'medium', question: 'ما هو نوع المشتق في كلمة "مَكتَب" للدلالة على مكان وزمان الكتابة؟', answer: 'اسم مكان', hint: 'على وزن مَفْعَل' },
+      { id: 'ar8', category: 'لغة عربية', difficulty: 'medium', question: 'ما هو الاسم في النحو الذي لا يلحقه التنوين ويُجر بالفتحة نيابة عن الكسرة؟', answer: 'الممنوع من الصرف', hint: 'مثل مساجد ومصابيح وأفضل' },
+      { id: 'ar9', category: 'لغة عربية', difficulty: 'hard', question: 'من هو العالم اللغوي العبقري واضع علم العروض وضابط بحور الشعر العربي الستة عشر؟', answer: 'الخليل بن أحمد الفراهيدي', hint: 'أستاذ سيبويه وصاحب معجم العين' },
+      { id: 'ar10', category: 'لغة عربية', difficulty: 'hard', question: 'ما هو أول معجم مكتوب في تاريخ العربية وجاء مرتباً بحسب مخارج الحروف الصوتية؟', answer: 'معجم العين', hint: 'ألفه الخليل بن أحمد وبدأ بحرف العين' },
+      { id: 'ar11', category: 'لغة عربية', difficulty: 'hard', question: 'ما هو الفعل الماضي الناقص الجامد الذي يفيد نفي اتصاف المبتدأ بالخبر؟', answer: 'ليسَ', hint: 'من أخوات كان' },
+      { id: 'ar12', category: 'لغة عربية', difficulty: 'easy', question: 'ما هو نوع الجمع في كلمات مثل: "مُهندسون، صابرين، معلمون"؟', answer: 'جمع مذكر سالم', hint: 'ينتهي بزيادة واو ونون أو ياء ونون' },
+      { id: 'ar13', category: 'لغة عربية', difficulty: 'medium', question: 'من هو إمام النحاة البصريين صاحب أول كتاب شامل في قواعد النحو عُرف ببساطة بـ "الكتاب"؟', answer: 'سيبويه', hint: 'لقب فارسي يعني رائحة التفاح' },
+      { id: 'ar14', category: 'لغة عربية', difficulty: 'hard', question: 'ما هي الجملة التي تبدأ بفعل مسند وتتألف من فعل وفاعل؟', answer: 'الجملة الفعلية', hint: 'تقابل الجملة الاسمية' },
+      { id: 'ar15', category: 'لغة عربية', difficulty: 'hard', question: 'ماذا يُسمى المحسن البديعي اللفظي الذي يقوم على توافق نهايات فواصل الجمل في الحرف الأخير؟', answer: 'السجع', hint: 'مثل: الصوم حرمان مشروع، وتأديب بالخشوع' },
+
+      // --- اقتصاد ومال (15) ---
+      { id: 'e1', category: 'اقتصاد ومال', difficulty: 'easy', question: 'ما هي العملة النقدية الرسمية الموحدة المستخدمة في معظم دول الاتحاد الأوروبي؟', answer: 'اليورو (Euro)', hint: 'رمزها €' },
+      { id: 'e2', category: 'اقتصاد ومال', difficulty: 'easy', question: 'ما هو المعدن النفيس الأصفر الذي يُعتبر الملاذ الآمن تاريخياً للمستثمرين واحتياطي البنوك؟', answer: 'الذهب', hint: 'معدن ثمين لا يصدأ' },
+      { id: 'e3', category: 'اقتصاد ومال', difficulty: 'easy', question: 'ما هو المصطلح الاقتصادي للارتفاع المستمر والشامل في المستوى العام لأسعار السلع والخدمات؟', answer: 'التضخم (Inflation)', hint: 'يؤدي لانخفاض القوة الشرائية للنقود' },
+      { id: 'e4', category: 'اقتصاد ومال', difficulty: 'medium', question: 'في أي مدينة أمريكية يقع شارع "وول ستريت" الشهير قلب البورصة والمال عالمياً؟', answer: 'نيويورك', hint: 'عاصمة المال العالمية وتضم مانهاتن' },
+      { id: 'e5', category: 'اقتصاد ومال', difficulty: 'medium', question: 'ما هو المؤشر الذي يقيس القيمة السوقية الإجمالية للسلع والخدمات المنتجة محلياً في بلد ما خلال عام؟', answer: 'الناتج المحلي الإجمالي (GDP)', hint: 'Gross Domestic Product' },
+      { id: 'e6', category: 'اقتصاد ومال', difficulty: 'medium', question: 'ما هو الكيان المالي الحكومي المسؤول عن إصدار العملة وتحديد السياسة النقدية وسعر الفائدة؟', answer: 'البنك المركزي', hint: 'يُلقب ببنك البنوك ومقرض الملاذ الأخير' },
+      { id: 'e7', category: 'اقتصاد ومال', difficulty: 'medium', question: 'ما هو الاسم الذي يُطلق على المركز المالي التاريخي في قلب العاصمة البريطانية لندن؟', answer: 'حي السيتي (The City of London)', hint: 'يُعرف أيضاً بالميل المربع' },
+      { id: 'e8', category: 'اقتصاد ومال', difficulty: 'medium', question: 'ماذا يُسمى الفارق السلبي عندما تزيد نفقات ومصروفات الدولة العامة عن إجمالي إيراداتها؟', answer: 'عجز الموازنة (Fiscal Deficit)', hint: 'عكس مصطلح الفائض المالي' },
+      { id: 'e9', category: 'اقتصاد ومال', difficulty: 'hard', question: 'من هو الاقتصادي الاسكتلندي الملقب بأبي الاقتصاد الكلاسيكي وصاحب كتاب "ثروة الأمم"؟', answer: 'آدم سميث (Adam Smith)', hint: 'صاحب نظرية اليد الخفية المنظمة للأسواق' },
+      { id: 'e10', category: 'اقتصاد ومال', difficulty: 'hard', question: 'ما هي المنظمة الدولية الشهيرة التي تضم الدول المصدرة للبترول وتنسق حصص إنتاج النفط؟', answer: 'أوبك (OPEC)', hint: 'مقرها في العاصمة النمساوية فيينا' },
+      { id: 'e11', category: 'اقتصاد ومال', difficulty: 'hard', question: 'ما هو المؤشر المالي الأمريكي البارز الذي يقيس أداء أكبر 500 شركة مساهمة في البورصات الأمريكية؟', answer: 'إس آند بي 500 (S&P 500)', hint: 'Standard & Poor\'s 500' },
+      { id: 'e12', category: 'اقتصاد ومال', difficulty: 'easy', question: 'ما هي العملة الوطنية الرسمية للمملكة العربية السعودية؟', answer: 'الريال السعودي', hint: 'ينقسم إلى 100 هللة' },
+      { id: 'e13', category: 'اقتصاد ومال', difficulty: 'medium', question: 'ماذا يُطلق على السوق المنظمة التي يتم فيها بيع وشراء أسهم الشركات والسندات المالية؟', answer: 'البورصة (سوق الأسهم / الأوراق المالية)', hint: 'تتيح للشركات طرح أسهمها للاستثمار' },
+      { id: 'e14', category: 'اقتصاد ومال', difficulty: 'hard', question: 'ما هو المصطلح المصرفي للقرض طويل الأجل لشراء عقار مع رهن العقار نفسه ضماناً للسداد؟', answer: 'التمويل / الرهن العقاري (Mortgage)', hint: 'يسدد بأقساط دورية على مدى سنوات' },
+      { id: 'e15', category: 'اقتصاد ومال', difficulty: 'hard', question: 'ماذا يُسمى الهيكل السوقي الذي ينفرد فيه منتج واحد بالسيطرة على سلعة معينة دون وجود منافس؟', answer: 'الاحتكار (Monopoly)', hint: 'انعدام المنافسة واستئثار طرف واحد بالعرض' },
+
+      // --- ألغاز ومنطق (15) ---
+      { id: 'p1', category: 'ألغاز ومنطق', difficulty: 'easy', question: 'ما هو الشيء الذي كلما أخذتَ ونزعتَ منه زاد اتساعاً وكَبُر حجمه؟', answer: 'الحفرة', hint: 'تجويف في الأرض كلما حفرته كبر' },
+      { id: 'p2', category: 'ألغاز ومنطق', difficulty: 'easy', question: 'ما هو الشيء الذي يمتلك أسناناً كثيرة ولكنه لا يعَض أبداً؟', answer: 'المشط', hint: 'تستخدمه يومياً لتصفيف الشعر' },
+      { id: 'p3', category: 'ألغاز ومنطق', difficulty: 'easy', question: 'ما هو الشيء الذي يمشي ويسري بلا أرجل، ويبكي ويسكب الدموع بلا عيون؟', answer: 'السحاب (أو المطر)', hint: 'في كبد السماء وينزل منه الغيث' },
+      { id: 'p4', category: 'ألغاز ومنطق', difficulty: 'medium', question: 'ما هو الشيء الذي يقف دائماً أمامك وفي انتظارك، ولكنك لا تستطيع رؤيته أبداً؟', answer: 'المستقبل', hint: 'ما يأتي بعد اللحظة الراهنة والغد' },
+      { id: 'p5', category: 'ألغاز ومنطق', difficulty: 'medium', question: 'ما هو الشيء الذي له عين واحدة واضحة في رأسه، ولكنه أعمى لا يرى بها شيئاً؟', answer: 'إبرة الخياطة', hint: 'يُمرر الخيط عبر عينها' },
+      { id: 'p6', category: 'ألغاز ومنطق', difficulty: 'medium', question: 'شيء يولد طويل القامة، وكلما مرت عليه الساعات صغر وقصر حتى ينتهي، ما هو؟', answer: 'الشمعة', hint: 'تشتعل لتنير وتذوب مع الوقت' },
+      { id: 'p7', category: 'ألغاز ومنطق', difficulty: 'medium', question: 'ما هو الشيء الذي يكسو جميع الناس ويصنع لهم الثياب، ولكنه يظل دائماً عارياً؟', answer: 'الإبرة', hint: 'أداة الخياطة المعدنية الرفيعة' },
+      { id: 'p8', category: 'ألغاز ومنطق', difficulty: 'medium', question: 'رجل سار تحت وابل المطر الغزير بلا مظلة ولا قبعة، ومع ذلك لم تبتل شعرة واحدة من رأسه! لماذا؟', answer: 'لأنه رجل أصلع تماماً', hint: 'لا يملك شعراً أصلاً' },
+      { id: 'p9', category: 'ألغاز ومنطق', difficulty: 'hard', question: 'هو ابن أبيك وابن أمك بالدم، ولكنه ليس بأخيك ولا بأختك، فمن يكون هذا الشخص؟', answer: 'أنت نفسك', hint: 'الشخص المتحدث باللغز نفسه' },
+      { id: 'p10', category: 'ألغاز ومنطق', difficulty: 'hard', question: 'ما هو القفص العجيب الذي يستحيل أن تحبس أو تضع فيه طائراً أو كائناً حياً أبداً؟', answer: 'القفص الصدري', hint: 'جزء تشريحي عظمي يحمي القلب والرئتين' },
+      { id: 'p11', category: 'ألغاز ومنطق', difficulty: 'hard', question: 'قطار كهربائي فائق السرعة يسير متجهاً نحو الشمال بسرعة 150 كم/ساعة، في أي اتجاه سيتطاير دخانه؟', answer: 'ليس له دخان (لأنه قطار كهربائي)', hint: 'ركز جيداً في مصدر تشغيل هذا القطار' },
+      { id: 'p12', category: 'ألغاز ومنطق', difficulty: 'easy', question: 'ما هو الشيء الذي يتكلم بجميع لغات العالم ويكرر كل كلامك دون أن يمتلك لساناً أو عقلاً؟', answer: 'صدى الصوت', hint: 'يرتد صوتك في الأودية والقاعات الفارغة' },
+      { id: 'p13', category: 'ألغاز ومنطق', difficulty: 'medium', question: 'ما هو الباب الذي يستحيل عليك فتحه مهما حاولت واستخدمت من قوى؟', answer: 'الباب المفتوح بالفعل', hint: 'هو مفتوح سلفاً فلا يمكن فتحه ثانية' },
+      { id: 'p14', category: 'ألغاز ومنطق', difficulty: 'hard', question: 'ما هو الشيء الغذائي الذي إذا وضعته في الماء المغلي زادت صلابته وتماسك وتجمد؟', answer: 'البيض', hint: 'يتخثر زلاله بالحرارة ويصبح صلباً' },
+      { id: 'p15', category: 'ألغاز ومنطق', difficulty: 'hard', question: 'خمسة أفراد مشوا معاً في العراء تحت مظلة صغيرة واحدة، ومع ذلك لم يبتل أحد منهم بقطرة ماء! كيف؟', answer: 'لأنه لم يكن هناك مطر أصلاً (الجو صحو)', hint: 'المظلة كانت بدون هطول أمطار' }
+    ];
+
+    const ALL_CATEGORIES = [
+      'تاريخ', 'جغرافيا', 'علوم', 'ثقافة إسلامية', 'أدب وشعر عربي', 
+      'فنون وسينما', 'تقنية', 'لغة عربية', 'اقتصاد ومال', 'ألغاز ومنطق'
+    ];
+
+    // ==========================================
+    // 3) نظام الصوتيات الإجرائي (Web Audio API)
+    // ==========================================
+    class SoundFX {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+        try {
+          const m = localStorage.getItem('tahadi_sound_muted');
+          if (m !== null) this.muted = JSON.parse(m);
+        } catch(e) {}
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+      }
+      toggleMute() {
+        this.muted = !this.muted;
+        try { localStorage.setItem('tahadi_sound_muted', JSON.stringify(this.muted)); } catch(e) {}
+        return this.muted;
+      }
+      playClick() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.05);
+        g.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
+        osc.connect(g);
+        g.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.05);
+      }
+      playCorrect() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const g = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.08);
+          g.gain.setValueAtTime(0, this.ctx.currentTime + idx * 0.08);
+          g.gain.linearRampToValueAtTime(0.12, this.ctx.currentTime + idx * 0.08 + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.08 + 0.35);
+          osc.connect(g);
+          g.connect(this.ctx.destination);
+          osc.start(this.ctx.currentTime + idx * 0.08);
+          osc.stop(this.ctx.currentTime + idx * 0.08 + 0.36);
+        });
+      }
+      playWrong() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(100, this.ctx.currentTime + 0.3);
+        g.gain.setValueAtTime(0.12, this.ctx.currentTime);
+        g.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
+        osc.connect(g);
+        g.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.35);
+      }
+      playTick(urgent = false) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = urgent ? 'sawtooth' : 'triangle';
+        osc.frequency.setValueAtTime(urgent ? 880 : 520, this.ctx.currentTime);
+        g.gain.setValueAtTime(urgent ? 0.07 : 0.04, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.04);
+        osc.connect(g);
+        g.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.04);
+      }
+      playTimeout() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        [196, 185, 174].forEach((f, idx) => {
+          const osc = this.ctx.createOscillator();
+          const g = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(f, this.ctx.currentTime + idx * 0.12);
+          g.gain.setValueAtTime(0.12, this.ctx.currentTime + idx * 0.12);
+          g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.12 + 0.2);
+          osc.connect(g);
+          g.connect(this.ctx.destination);
+          osc.start(this.ctx.currentTime + idx * 0.12);
+          osc.stop(this.ctx.currentTime + idx * 0.12 + 0.22);
+        });
+      }
+      playVictory() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const notes = [
+          { f: 523.25, d: 0.15 }, { f: 659.25, d: 0.15 },
+          { f: 783.99, d: 0.15 }, { f: 1046.50, d: 0.4 },
+          { f: 880.00, d: 0.2 }, { f: 1046.50, d: 0.6 }
+        ];
+        let t = this.ctx.currentTime;
+        notes.forEach(n => {
+          const osc = this.ctx.createOscillator();
+          const g = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(n.f, t);
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(0.15, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, t + n.d);
+          osc.connect(g);
+          g.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + n.d + 0.05);
+          t += n.d;
+        });
+      }
+      playStreakBonus() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        [587.33, 739.99, 880.00, 1174.66].forEach((f, i) => {
+          const osc = this.ctx.createOscillator();
+          const g = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, this.ctx.currentTime + i * 0.07);
+          g.gain.setValueAtTime(0, this.ctx.currentTime + i * 0.07);
+          g.gain.linearRampToValueAtTime(0.15, this.ctx.currentTime + i * 0.07 + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + i * 0.07 + 0.4);
+          osc.connect(g);
+          g.connect(this.ctx.destination);
+          osc.start(this.ctx.currentTime + i * 0.07);
+          osc.stop(this.ctx.currentTime + i * 0.07 + 0.42);
+        });
+      }
+      playBetFanfare() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(330, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(660, this.ctx.currentTime + 0.25);
+        g.gain.setValueAtTime(0.12, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.28);
+        osc.connect(g);
+        g.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.28);
+      }
+    }
+    const audio = new SoundFX();
+
+    // ==========================================
+    // 4) حالة اللعبة (State Object)
+    // ==========================================
+    const state = {
+      theme: 'gold', // 'gold' | 'royal-blue' | 'emerald'
+      screen: 'SPLASH', // 'SPLASH' | 'SETUP' | 'PLAY' | 'VICTORY'
+      team1: { 
+        name: 'الفريق الذهبي', 
+        score: 0, 
+        correct: 0, 
+        streak: 0, 
+        longestStreak: 0, 
+        lifelines: { firstLetter: false, extraTime: false, consultFriend: false }, 
+        betsLeft: 2, 
+        skips: 0 
+      },
+      team2: { 
+        name: 'الفريق الملكي', 
+        score: 0, 
+        correct: 0, 
+        streak: 0, 
+        longestStreak: 0, 
+        lifelines: { firstLetter: false, extraTime: false, consultFriend: false }, 
+        betsLeft: 2, 
+        skips: 0 
+      },
+      activeTeamIndex: 0,
+      selectedCategories: [...ALL_CATEGORIES],
+      selectedDifficulty: 'all',
+      questions: [],
+      currentIndex: 0,
+      answerRevealed: false,
+      isPaused: false,
+      isProcessing: false,
+      isTieBreaker: false,
+
+      // Betting Round State
+      isBettingPhase: false,
+      isCurrentQuestionBet: false,
+
+      // Question Lifelines Tracking (Only 1 lifeline per question)
+      questionLifelineUsed: false,
+      firstLetterClue: '',
+
+      // Friend Consultation Timer
+      consultTimer: {
+        active: false,
+        secondsLeft: 20,
+        intervalId: null
+      },
+
+      // Question Timer with Date.now()
+      timeRemaining: QUESTION_TIMER_SECONDS,
+      timerStart: 0,
+      timerRemainingAtStart: QUESTION_TIMER_SECONDS,
+      timerInterval: null,
+      lastTickSec: QUESTION_TIMER_SECONDS,
+
+      // Temporary streak notification banner
+      streakAlert: null
+    };
+
+    // Load saved theme
+    try {
+      const saved = localStorage.getItem('tahadi_theme');
+      if (saved && ['gold', 'royal-blue', 'emerald'].includes(saved)) {
+        state.theme = saved;
+      }
+    } catch(e) {}
+
+    function setTheme(t) {
+      if (!['gold', 'royal-blue', 'emerald'].includes(t)) return;
+      state.theme = t;
+      document.documentElement.setAttribute('data-theme', t);
+      try {
+        localStorage.setItem('tahadi_theme', t);
+      } catch(e) {}
+
+      // Update meta theme-color
+      const meta = document.getElementById('metaThemeColor');
+      if (meta) {
+        meta.setAttribute('content', t === 'gold' ? '#07070B' : t === 'royal-blue' ? '#060B1A' : '#04120E');
+      }
+      render();
+    }
+
+    function shuffle(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    // Helper: calculate first letter clue
+    function calculateFirstLetterClue(answer) {
+      const clean = answer.replace(/[()]/g, '').trim();
+      const firstLetter = clean.match(/[ء-ي]/)?.[0] || clean[0];
+      const letterCount = clean.replace(/[^ء-ي]/g, '').length;
+      let blanks = '';
+      for (let i = 1; i < letterCount; i++) {
+        blanks += ' _';
+      }
+      return `${firstLetter}${blanks} — (${letterCount} حروف)`;
+    }
+
+    // ==========================================
+    // 5) التحكم بالمؤقت بدقة Date.now()
+    // ==========================================
+    function stopTimer() {
+      if (state.timerInterval) {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
+      }
+    }
+
+    function startTimer(duration) {
+      stopTimer();
+      state.timeRemaining = duration;
+      state.timerRemainingAtStart = duration;
+      state.timerStart = Date.now();
+      state.lastTickSec = Math.ceil(duration);
+
+      state.timerInterval = setInterval(() => {
+        if (state.isPaused || state.consultTimer.active) return;
+        const elapsed = (Date.now() - state.timerStart) / 1000;
+        const rem = Math.max(0, state.timerRemainingAtStart - elapsed);
+        state.timeRemaining = rem;
+
+        const ceilVal = Math.ceil(rem);
+        if (ceilVal < state.lastTickSec && ceilVal > 0) {
+          state.lastTickSec = ceilVal;
+          if (ceilVal <= 5) audio.playTick(true);
+          else if (ceilVal <= 10) audio.playTick(false);
+        }
+
+        updateTimerDisplay();
+
+        if (rem <= 0) {
+          stopTimer();
+          audio.playTimeout();
+          updateTimerDisplay();
+        }
+      }, 50);
+    }
+
+    function pauseTimer() {
+      if (state.isPaused) return;
+      state.isPaused = true;
+      const elapsed = (Date.now() - state.timerStart) / 1000;
+      state.timerRemainingAtStart = Math.max(0, state.timerRemainingAtStart - elapsed);
+      state.timeRemaining = state.timerRemainingAtStart;
+    }
+
+    function resumeTimer() {
+      if (!state.isPaused) return;
+      state.isPaused = false;
+      state.timerStart = Date.now();
+      state.lastTickSec = Math.ceil(state.timerRemainingAtStart);
+    }
+
+    // Add 15 extra seconds (Lifeline 2)
+    function addExtraTime() {
+      const active = state.activeTeamIndex === 0 ? state.team1 : state.team2;
+      if (active.lifelines.extraTime || state.questionLifelineUsed || state.answerRevealed || state.isPaused) return;
+
+      audio.playClick();
+      active.lifelines.extraTime = true;
+      state.questionLifelineUsed = true;
+
+      // Add 15 seconds, max 45s
+      const newRem = Math.min(45, state.timeRemaining + 15);
+      state.timeRemaining = newRem;
+      state.timerRemainingAtStart = newRem;
+      state.timerStart = Date.now();
+      state.lastTickSec = Math.ceil(newRem);
+
+      renderPlay();
+    }
+
+    // First Letter Lifeline (Lifeline 1)
+    function revealFirstLetter() {
+      const active = state.activeTeamIndex === 0 ? state.team1 : state.team2;
+      if (active.lifelines.firstLetter || state.questionLifelineUsed || state.answerRevealed || state.isPaused) return;
+
+      const q = state.questions[state.currentIndex];
+      if (!q) return;
+
+      audio.playClick();
+      active.lifelines.firstLetter = true;
+      state.questionLifelineUsed = true;
+      state.firstLetterClue = calculateFirstLetterClue(q.answer);
+
+      renderPlay();
+    }
+
+    // Consult Friend Lifeline (Lifeline 3)
+    function startConsultFriend() {
+      const active = state.activeTeamIndex === 0 ? state.team1 : state.team2;
+      if (active.lifelines.consultFriend || state.questionLifelineUsed || state.answerRevealed || state.isPaused) return;
+
+      audio.playClick();
+      active.lifelines.consultFriend = true;
+      state.questionLifelineUsed = true;
+
+      // Pause main timer accurately
+      const elapsed = (Date.now() - state.timerStart) / 1000;
+      state.timerRemainingAtStart = Math.max(0, state.timerRemainingAtStart - elapsed);
+      state.timeRemaining = state.timerRemainingAtStart;
+
+      // Open consultation modal & start 20s consultation timer
+      state.consultTimer.active = true;
+      state.consultTimer.secondsLeft = 20;
+
+      showConsultModal();
+
+      state.consultTimer.intervalId = setInterval(() => {
+        state.consultTimer.secondsLeft -= 1;
+        const el = document.getElementById('consultSecText');
+        if (el) el.innerText = state.consultTimer.secondsLeft;
+
+        if (state.consultTimer.secondsLeft <= 0) {
+          endConsultFriend();
+        }
+      }, 1000);
+    }
+
+    function endConsultFriend() {
+      if (state.consultTimer.intervalId) {
+        clearInterval(state.consultTimer.intervalId);
+        state.consultTimer.intervalId = null;
+      }
+      state.consultTimer.active = false;
+      const modal = document.getElementById('consultModal');
+      if (modal) modal.remove();
+
+      // Resume main timer
+      state.timerStart = Date.now();
+      state.lastTickSec = Math.ceil(state.timerRemainingAtStart);
+      renderPlay();
+    }
+
+    // ==========================================
+    // 6) احتفال الفوز بـ Canvas Confetti
+    // ==========================================
+    let confettiCancel = null;
+    function runConfetti() {
+      const canvas = document.getElementById('confettiCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const particles = [];
+      const computed = getComputedStyle(document.documentElement);
+      const primaryColor = computed.getPropertyValue('--accent-primary').trim() || '#D4AF37';
+      const lightColor = computed.getPropertyValue('--accent-light').trim() || '#F5D77A';
+      const colors = [primaryColor, lightColor, '#FFFFFF', '#38BDF8', '#10B981', '#F59E0B'];
+
+      for (let i = 0; i < 160; i++) {
+        particles.push({
+          x: canvas.width / 2 + (Math.random() - 0.5) * 320,
+          y: canvas.height * 0.4 + (Math.random() - 0.5) * 160,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * 16,
+          vy: Math.random() * -14 - 4,
+          rot: Math.random() * 360,
+          vRot: (Math.random() - 0.5) * 10,
+          opacity: 1
+        });
+      }
+
+      let animId;
+      function loop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.22;
+          p.vx *= 0.985;
+          p.rot += p.vRot;
+          if (p.y > canvas.height * 0.8) p.opacity -= 0.015;
+          if (p.opacity <= 0 || p.y > canvas.height + 20) {
+            particles.splice(i, 1);
+            continue;
+          }
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rot * Math.PI) / 180);
+          ctx.globalAlpha = Math.max(0, p.opacity);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size * 0.6);
+          ctx.restore();
+        }
+        if (particles.length > 0) animId = requestAnimationFrame(loop);
+      }
+      animId = requestAnimationFrame(loop);
+      confettiCancel = () => {
+        cancelAnimationFrame(animId);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      };
+    }
+
+    // ==========================================
+    // 7) رندرة الشاشات وتدفق اللعبة
+    // ==========================================
+    const appEl = document.getElementById('app');
+
+    function render() {
+      if (confettiCancel && state.screen !== 'VICTORY') {
+        confettiCancel();
+        confettiCancel = null;
+      }
+
+      if (state.screen === 'SPLASH') renderSplash();
+      else if (state.screen === 'SETUP') renderSetup();
+      else if (state.screen === 'PLAY') renderPlay();
+      else if (state.screen === 'VICTORY') renderVictory();
+    }
+
+    // Theme Switcher Widget Component
+    function renderThemeSwitcher() {
+      return `
+        <div style="display:inline-flex; align-items:center; gap:8px; padding:4px 10px; border-radius:99px; background:rgba(255,255,255,0.06); border:1px solid var(--border-accent);">
+          <span style="font-size:11px; color:var(--text-muted); font-weight:600;">الثيمة:</span>
+          <div class="theme-dot ${state.theme === 'gold' ? 'active' : ''}" style="background:linear-gradient(135deg, #F5D77A, #D4AF37);" title="ذهبي أسود" onclick="setTheme('gold');"></div>
+          <div class="theme-dot ${state.theme === 'royal-blue' ? 'active' : ''}" style="background:linear-gradient(135deg, #C9D6FF, #6C8CFF);" title="أزرق ملكي" onclick="setTheme('royal-blue');"></div>
+          <div class="theme-dot ${state.theme === 'emerald' ? 'active' : ''}" style="background:linear-gradient(135deg, #E8D48B, #2ECC9A);" title="زمردي" onclick="setTheme('emerald');"></div>
+        </div>
+      `;
+    }
+
+    // --- الشاشة الافتتاحية ---
+    function renderSplash() {
+      appEl.innerHTML = `
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px 0;">
+          <!-- Top Row with Theme Switcher & PWA Install Button -->
+          <div style="display:flex; justify-content:space-between; align-items:center; width:100%; max-width:600px; margin-bottom:20px;">
+            ${renderThemeSwitcher()}
+            <div id="pwaInstallContainer"></div>
+          </div>
+
+          <div style="display:inline-block; padding:6px 18px; border-radius:999px; background:rgba(255,255,255,0.05); border:1px solid var(--border-accent); font-size:13px; color:var(--accent-light); margin-bottom:20px;">
+            المسابقة الثقافية التنافسية الكبرى
+          </div>
+
+          <h1 class="accent-gradient-text" style="font-size:clamp(2.8rem, 8vw, 5.5rem); font-weight:900; line-height:1.1; margin-bottom:12px;">
+            تحدي الثلاثين
+          </h1>
+          <p style="font-size:1.2rem; color:#CBD5E1; margin-bottom:30px;">
+            النسخة الثقافية والمعلومات العامة
+          </p>
+
+          <div class="glass-box" style="padding:20px; max-width:550px; width:100%; margin-bottom:32px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center;">
+              <div>
+                <div class="font-display" style="font-size:2rem; font-weight:900; color:var(--accent-light);">${TARGET_WIN_SCORE}</div>
+                <div style="font-size:12px; color:var(--text-muted);">نقطة للفوز</div>
+              </div>
+              <div style="border-right:1px solid var(--border-accent); border-left:1px solid var(--border-accent);">
+                <div class="font-display" style="font-size:2rem; font-weight:900; color:var(--accent-light);">${QUESTION_TIMER_SECONDS}s</div>
+                <div style="font-size:12px; color:var(--text-muted);">مؤقت السؤال</div>
+              </div>
+              <div>
+                <div class="font-display" style="font-size:2rem; font-weight:900; color:var(--accent-light);">10</div>
+                <div style="font-size:12px; color:var(--text-muted);">تصنيفات متنوعة</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:14px; width:100%; max-width:340px;">
+            <button class="btn-accent font-display" onclick="audio.playClick(); state.screen='SETUP'; render();">
+              ابدأ التحدي
+            </button>
+            <button class="btn-outline" onclick="audio.playClick(); showRulesModal();">
+              طريقة وقواعد اللعب
+            </button>
+          </div>
+
+          <div style="margin-top:28px; display:flex; gap:16px; align-items:center; font-size:13px; color:var(--text-muted);">
+            <span style="cursor:pointer;" onclick="toggleAudioMute();">
+              ${audio.muted ? '🔇 الصوت مكتوم' : '🔊 الصوت يعمل'}
+            </span>
+          </div>
+
+          <div id="iosInstallHint" style="display:none; margin-top:16px; font-size:12px; color:var(--text-muted); background:rgba(255,255,255,0.05); padding:8px 16px; border-radius:10px; border:1px solid var(--border-accent);">
+            📱 لتثبيت التطبيق على آيفون: اضغط زر المشاركة ثم "إضافة إلى الصفحة الرئيسية"
+          </div>
+        </div>
+      `;
+
+      renderPwaInstallButton();
+    }
+
+    function toggleAudioMute() {
+      audio.toggleMute();
+      render();
+    }
+
+    // --- شاشة الإعداد ---
+    function renderSetup() {
+      appEl.innerHTML = `
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:center; padding:16px 0;">
+          <div class="glass-box" style="padding:28px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; border-bottom:1px solid var(--border-accent); padding-bottom:14px;">
+              <div>
+                <h2 class="accent-gradient-text" style="font-size:1.8rem; font-weight:800;">إعدادات المواجهة</h2>
+                <p style="font-size:13px; color:var(--text-muted);">اختر أسماء الفريقين والتصنيفات والصعوبة</p>
+              </div>
+              <div style="display:flex; align-items:center; gap:12px;">
+                ${renderThemeSwitcher()}
+                <button class="btn-outline" style="padding:6px 16px; font-size:13px;" onclick="audio.playClick(); state.screen='SPLASH'; render();">
+                  رجوع
+                </button>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+              <div>
+                <label style="display:block; font-size:12px; font-weight:700; color:var(--accent-light); margin-bottom:6px;">
+                  اسم الفريق الأول
+                </label>
+                <input id="team1Input" type="text" maxlength="16" value="${state.team1.name}" 
+                  style="width:100%; padding:10px 14px; background:rgba(0,0,0,0.3); border:1px solid var(--border-accent); border-radius:10px; color:#FFF; font-family:inherit; font-size:14px; outline:none;">
+              </div>
+              <div>
+                <label style="display:block; font-size:12px; font-weight:700; color:var(--accent-light); margin-bottom:6px;">
+                  اسم الفريق الثاني
+                </label>
+                <input id="team2Input" type="text" maxlength="16" value="${state.team2.name}" 
+                  style="width:100%; padding:10px 14px; background:rgba(0,0,0,0.3); border:1px solid var(--border-accent); border-radius:10px; color:#FFF; font-family:inherit; font-size:14px; outline:none;">
+              </div>
+            </div>
+
+            <div style="margin-bottom:24px;">
+              <label style="display:block; font-size:13px; font-weight:700; color:#E2E8F0; margin-bottom:8px;">
+                مستوى الصعوبة:
+              </label>
+              <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px;">
+                ${['all', 'easy', 'medium', 'hard'].map(d => {
+                  const lbl = d === 'all' ? 'الكل' : d === 'easy' ? 'سهل' : d === 'medium' ? 'متوسط' : 'صعب';
+                  const active = state.selectedDifficulty === d;
+                  return `
+                    <button onclick="audio.playClick(); state.selectedDifficulty='${d}'; renderSetup();"
+                      style="padding:8px; border-radius:8px; font-size:13px; font-weight:700; ${active ? 'background:linear-gradient(135deg, var(--accent-light), var(--accent-primary)); color:#07070B;' : 'background:rgba(255,255,255,0.04); color:var(--text-muted); border:1px solid rgba(255,255,255,0.08);'}">
+                      ${lbl}
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <div style="margin-bottom:28px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <label style="font-size:13px; font-weight:700; color:#E2E8F0;">
+                  اختيار التصنيفات (${state.selectedCategories.length} من 10 مختارة - الأدنى 3):
+                </label>
+                <div style="display:flex; gap:12px; font-size:12px;">
+                  <span style="color:var(--accent-light); cursor:pointer;" onclick="selectRandomCat();">عشوائي (5)</span>
+                  <span style="color:var(--accent-light); cursor:pointer;" onclick="selectAllCat();">تحديد الكل</span>
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:10px;">
+                ${ALL_CATEGORIES.map(cat => {
+                  const sel = state.selectedCategories.includes(cat);
+                  return `
+                    <button onclick="toggleCat('${cat}');"
+                      style="padding:10px; border-radius:12px; text-align:center; font-size:13px; font-weight:600; border:1px solid ${sel ? 'var(--accent-primary)' : 'rgba(255,255,255,0.06)'}; ${sel ? 'background:rgba(255,255,255,0.12); color:#FFF; box-shadow:0 0 15px var(--glow-accent);' : 'background:rgba(0,0,0,0.3); color:var(--text-muted);'}">
+                      ${cat}
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end;">
+              <button class="btn-accent font-display" onclick="startNewGame();" ${state.selectedCategories.length < 3 ? 'disabled' : ''}>
+                دخول حلبة التحدي
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function toggleCat(cat) {
+      audio.playClick();
+      if (state.selectedCategories.includes(cat)) {
+        if (state.selectedCategories.length <= 3) return;
+        state.selectedCategories = state.selectedCategories.filter(c => c !== cat);
+      } else {
+        state.selectedCategories.push(cat);
+      }
+      renderSetup();
+    }
+
+    function selectRandomCat() {
+      audio.playClick();
+      state.selectedCategories = shuffle(ALL_CATEGORIES).slice(0, 5);
+      renderSetup();
+    }
+
+    function selectAllCat() {
+      audio.playClick();
+      state.selectedCategories = [...ALL_CATEGORIES];
+      renderSetup();
+    }
+
+    function startNewGame() {
+      const t1 = document.getElementById('team1Input')?.value?.trim();
+      const t2 = document.getElementById('team2Input')?.value?.trim();
+      state.team1 = { 
+        name: t1 || 'الفريق الأول', 
+        score: 0, 
+        correct: 0, 
+        streak: 0, 
+        longestStreak: 0, 
+        lifelines: { firstLetter: false, extraTime: false, consultFriend: false }, 
+        betsLeft: 2, 
+        skips: 0 
+      };
+      state.team2 = { 
+        name: t2 || 'الفريق الثاني', 
+        score: 0, 
+        correct: 0, 
+        streak: 0, 
+        longestStreak: 0, 
+        lifelines: { firstLetter: false, extraTime: false, consultFriend: false }, 
+        betsLeft: 2, 
+        skips: 0 
+      };
+
+      let pool = QUESTIONS_BANK.filter(q => state.selectedCategories.includes(q.category));
+      if (state.selectedDifficulty !== 'all') {
+        const filtered = pool.filter(q => q.difficulty === state.selectedDifficulty);
+        if (filtered.length > 0) pool = filtered;
+      }
+      state.questions = shuffle(pool);
+      state.currentIndex = 0;
+      state.activeTeamIndex = 0;
+      state.answerRevealed = false;
+      state.isPaused = false;
+      state.isProcessing = false;
+      state.isTieBreaker = false;
+      state.streakAlert = null;
+
+      audio.playClick();
+      state.screen = 'PLAY';
+      checkBeforeQuestionStart();
+    }
+
+    // Checking if Betting Phase should open before Question starts
+    function checkBeforeQuestionStart() {
+      state.isCurrentQuestionBet = false;
+      state.questionLifelineUsed = false;
+      state.firstLetterClue = '';
+      state.answerRevealed = false;
+
+      const activeTeam = state.activeTeamIndex === 0 ? state.team1 : state.team2;
+      const q = state.questions[state.currentIndex];
+      if (!q) {
+        state.screen = 'VICTORY';
+        render();
+        return;
+      }
+
+      // If team has >= 2 points and has bets left, offer Betting Round decision
+      if (activeTeam.score >= 2 && activeTeam.betsLeft > 0) {
+        state.isBettingPhase = true;
+        render();
+      } else {
+        state.isBettingPhase = false;
+        render();
+        startTimer(QUESTION_TIMER_SECONDS);
+      }
+    }
+
+    function confirmBetDecision(isBet) {
+      audio.playClick();
+      const activeTeam = state.activeTeamIndex === 0 ? state.team1 : state.team2;
+
+      if (isBet && activeTeam.score >= 2 && activeTeam.betsLeft > 0) {
+        activeTeam.betsLeft -= 1;
+        state.isCurrentQuestionBet = true;
+        audio.playBetFanfare();
+      } else {
+        state.isCurrentQuestionBet = false;
+      }
+
+      state.isBettingPhase = false;
+      render();
+      startTimer(QUESTION_TIMER_SECONDS);
+    }
+
+    // Helper: format flame streak indicator
+    function renderStreakFlame(streak) {
+      if (!streak || streak <= 0) return '';
+      if (streak === 1) return `<span class="flame-active" title="سلسلة إجابات: 1">🔥</span>`;
+      if (streak === 2) return `<span class="flame-active" title="سلسلة إجابات: 2">🔥🔥</span>`;
+      return `<span class="flame-active" title="سلسلة ذهبية!">🔥🔥🔥</span>`;
+    }
+
+    // Helper: format remaining lifelines badge
+    function renderLifelinesStatus(team) {
+      let count = 0;
+      if (!team.lifelines.firstLetter) count++;
+      if (!team.lifelines.extraTime) count++;
+      if (!team.lifelines.consultFriend) count++;
+      return `${count} من 3 متاحة`;
+    }
+
+    // --- شاشة اللعب النشطة ---
+    function renderPlay() {
+      const q = state.questions[state.currentIndex];
+      if (!q) {
+        state.screen = 'VICTORY';
+        render();
+        return;
+      }
+
+      // If in Betting Phase Modal, render Bet Decision Screen
+      if (state.isBettingPhase) {
+        renderBetDecisionScreen(q);
+        return;
+      }
+
+      const activeTeam = state.activeTeamIndex === 0 ? state.team1 : state.team2;
+
+      appEl.innerHTML = `
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:space-between; padding:8px 0;">
+          <!-- شريط علوي -->
+          <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:12px; border-bottom:1px solid var(--border-accent);">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="accent-gradient-text font-display" style="font-size:1.4rem; font-weight:800;">تحدي الثلاثين</span>
+              ${state.isTieBreaker ? '<span style="background:rgba(245,158,11,0.2); color:#FBBF24; border:1px solid #F59E0B; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700;">جولة فاصلة</span>' : ''}
+              ${state.isCurrentQuestionBet ? '<span style="background:linear-gradient(135deg, var(--accent-light), var(--accent-primary)); color:#07070B; padding:3px 10px; border-radius:8px; font-size:11px; font-weight:900; box-shadow:0 0 15px var(--glow-accent);">رهان ×2</span>' : ''}
+            </div>
+            
+            <div style="font-size:12px; color:var(--text-muted);">
+              السؤال ${state.currentIndex + 1} من ${state.questions.length} · الهدف: ${TARGET_WIN_SCORE}
+            </div>
+
+            <div style="display:flex; gap:8px;">
+              <button onclick="toggleAudioMute();" class="btn-outline" style="padding:6px 10px; font-size:12px;" aria-label="كتم / تشغيل الصوت">
+                ${audio.muted ? '🔇' : '🔊'}
+              </button>
+              <button onclick="togglePauseGame();" class="btn-outline" style="padding:6px 12px; font-size:12px;" aria-label="إيقاف مؤقت">
+                ${state.isPaused ? 'استئناف' : 'إيقاف (P)'}
+              </button>
+              <button onclick="confirmExitGame();" class="btn-outline" style="padding:6px 12px; font-size:12px; color:#F87171;" aria-label="إنهاء التحدي">
+                خروج
+              </button>
+            </div>
+          </div>
+
+          <!-- تنبيه السلسلة الذهبية -->
+          ${state.streakAlert ? `
+            <div style="margin:8px 0; padding:10px 16px; border-radius:12px; background:linear-gradient(135deg, rgba(245,158,11,0.25), rgba(212,175,55,0.2)); border:1.5px solid var(--accent-primary); text-align:center; font-weight:800; font-size:14px; color:var(--accent-light); box-shadow:0 0 20px var(--glow-accent);">
+              🔥 ${state.streakAlert} 🔥
+            </div>
+          ` : ''}
+
+          <!-- لوحة نقاط الفريقين -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:12px 0;">
+            <!-- الفريق 1 -->
+            <div class="glass-box ${state.activeTeamIndex === 0 ? 'accent-glow-lg' : ''}" 
+              style="padding:16px; border-color:${state.activeTeamIndex === 0 ? 'var(--accent-primary)' : 'rgba(255,255,255,0.08)'}; opacity:${state.activeTeamIndex === 0 ? '1' : '0.7'};">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-weight:700; font-size:15px; color:#FFF;">${state.team1.name}</span>
+                  ${renderStreakFlame(state.team1.streak)}
+                </div>
+                ${state.activeTeamIndex === 0 ? '<span style="font-size:10px; background:rgba(255,255,255,0.1); color:var(--accent-light); padding:2px 6px; border-radius:4px; font-weight:700;">صاحب الدور</span>' : ''}
+              </div>
+              <div style="display:flex; align-items:baseline; gap:6px; margin-bottom:8px;">
+                <span class="font-display" style="font-size:2.8rem; font-weight:900; color:#FFF; line-height:1;">${state.team1.score}</span>
+                <span style="font-size:12px; color:var(--text-muted);">/ ${TARGET_WIN_SCORE}</span>
+              </div>
+              <div style="background:rgba(255,255,255,0.08); height:6px; border-radius:99px; overflow:hidden; margin-bottom:10px;">
+                <div style="background:linear-gradient(90deg, var(--accent-primary), var(--accent-light)); height:100%; width:${Math.min(100, (state.team1.score / TARGET_WIN_SCORE) * 100)}%; transition:width 0.4s ease;"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted);">
+                <span>الوسائل: ${renderLifelinesStatus(state.team1)}</span>
+                <span>الرهان: ${state.team1.betsLeft} متبقي</span>
+              </div>
+            </div>
+
+            <!-- الفريق 2 -->
+            <div class="glass-box ${state.activeTeamIndex === 1 ? 'accent-glow-lg' : ''}" 
+              style="padding:16px; border-color:${state.activeTeamIndex === 1 ? 'var(--accent-primary)' : 'rgba(255,255,255,0.08)'}; opacity:${state.activeTeamIndex === 1 ? '1' : '0.7'};">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-weight:700; font-size:15px; color:#FFF;">${state.team2.name}</span>
+                  ${renderStreakFlame(state.team2.streak)}
+                </div>
+                ${state.activeTeamIndex === 1 ? '<span style="font-size:10px; background:rgba(255,255,255,0.1); color:var(--accent-light); padding:2px 6px; border-radius:4px; font-weight:700;">صاحب الدور</span>' : ''}
+              </div>
+              <div style="display:flex; align-items:baseline; gap:6px; margin-bottom:8px;">
+                <span class="font-display" style="font-size:2.8rem; font-weight:900; color:#FFF; line-height:1;">${state.team2.score}</span>
+                <span style="font-size:12px; color:var(--text-muted);">/ ${TARGET_WIN_SCORE}</span>
+              </div>
+              <div style="background:rgba(255,255,255,0.08); height:6px; border-radius:99px; overflow:hidden; margin-bottom:10px;">
+                <div style="background:linear-gradient(90deg, var(--accent-primary), var(--accent-light)); height:100%; width:${Math.min(100, (state.team2.score / TARGET_WIN_SCORE) * 100)}%; transition:width 0.4s ease;"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted);">
+                <span>الوسائل: ${renderLifelinesStatus(state.team2)}</span>
+                <span>الرهان: ${state.team2.betsLeft} متبقي</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- بطاقة السؤال ومؤقت SVG -->
+          <div class="glass-box question-card" style="padding:22px; position:relative; margin:auto 0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="display:block; font-size:13px; font-weight:700; color:var(--accent-light);">${q.category}</span>
+                  ${state.isCurrentQuestionBet ? '<span style="background:rgba(245,158,11,0.2); border:1px solid var(--accent-primary); color:var(--accent-light); font-size:10px; padding:2px 8px; border-radius:4px; font-weight:800;">سؤال رهان ×2</span>' : ''}
+                </div>
+                <span style="font-size:11px; color:var(--text-muted);">الصعوبة: ${q.difficulty === 'easy' ? 'سهل' : q.difficulty === 'medium' ? 'متوسط' : 'صعب'}</span>
+              </div>
+
+              <!-- مؤقت SVG الدائري -->
+              <div id="timerContainer" style="position:relative; width:74px; height:74px; display:flex; align-items:center; justify-content:center;">
+                <svg width="74" height="74" style="transform:rotate(-90deg);">
+                  <circle cx="37" cy="37" r="31" stroke="rgba(255,255,255,0.08)" stroke-width="5" fill="transparent"/>
+                  <circle id="timerProgressCircle" cx="37" cy="37" r="31" stroke="var(--accent-primary)" stroke-width="5" fill="transparent"
+                    stroke-dasharray="194.78" stroke-dashoffset="0" stroke-linecap="round" style="transition:stroke-dashoffset 0.08s linear, stroke 0.3s;"/>
+                </svg>
+                <div style="position:absolute; text-align:center;">
+                  <span id="timerText" class="font-display" style="font-size:1.5rem; font-weight:900; color:var(--accent-light); line-height:1;">
+                    ${Math.ceil(state.timeRemaining)}
+                  </span>
+                  <span style="font-size:9px; color:var(--text-muted); display:block;">ثانية</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- نص السؤال -->
+            <div style="min-height:85px; display:flex; align-items:center; justify-content:center; text-align:center; padding:8px 0;">
+              <h3 class="question-text">
+                ${q.question}
+              </h3>
+            </div>
+
+            <!-- كشف الحرف الأول (الوسيلة 1) -->
+            ${state.firstLetterClue ? `
+              <div style="background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); border-radius:12px; padding:10px 16px; margin-bottom:14px; font-size:14px; color:#BAE6FD; text-align:center;">
+                <strong style="color:#38BDF8; display:block; margin-bottom:2px; font-size:12px;">كشف الحرف الأول:</strong>
+                <span style="font-size:1.25rem; font-weight:800; letter-spacing:2px; font-family:var(--font-question);">${state.firstLetterClue}</span>
+              </div>
+            ` : ''}
+
+            <!-- مساحة الإجابة -->
+            ${state.answerRevealed ? `
+              <div style="background:rgba(255,255,255,0.06); border:1px solid var(--border-accent); border-radius:14px; padding:14px; text-align:center; margin-bottom:14px;">
+                <span style="font-size:11px; color:var(--accent-light); display:block; margin-bottom:4px;">الإجابة النموذجية:</span>
+                <span class="answer-text" style="font-size:1.5rem; display:block;">${q.answer}</span>
+              </div>
+            ` : `
+              <div style="display:flex; justify-content:center; margin-bottom:14px;">
+                <button class="btn-outline" onclick="audio.playClick(); state.answerRevealed=true; renderPlay();" style="font-size:13px;" aria-label="إظهار الإجابة">
+                  👁️ إظهار الإجابة (مسافة Space)
+                </button>
+              </div>
+            `}
+
+            <!-- وسائل المساعدة الثلاث الجديدة + زر التخطي -->
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.08); padding-top:12px;">
+              <!-- 3 Lifelines Circular Buttons -->
+              <div style="display:flex; gap:12px; align-items:center;">
+                <!-- Lifeline 1: كشف الحرف الأول -->
+                <button 
+                  class="lifeline-btn ${activeTeam.lifelines.firstLetter ? 'used' : ''}" 
+                  onclick="revealFirstLetter();" 
+                  ${activeTeam.lifelines.firstLetter || state.questionLifelineUsed || state.answerRevealed || state.isPaused ? 'disabled' : ''}
+                  title="كشف الحرف الأول وعدد الحروف (1)" 
+                  aria-label="كشف الحرف الأول">
+                  ${activeTeam.lifelines.firstLetter ? '✓' : `
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4 7V4h16v3M9 20h6M12 4v16"/>
+                    </svg>
+                  `}
+                </button>
+
+                <!-- Lifeline 2: وقت إضافي (+15 ثانية) -->
+                <button 
+                  class="lifeline-btn ${activeTeam.lifelines.extraTime ? 'used' : ''}" 
+                  onclick="addExtraTime();" 
+                  ${activeTeam.lifelines.extraTime || state.questionLifelineUsed || state.answerRevealed || state.isPaused ? 'disabled' : ''}
+                  title="إضافة 15 ثانية للمؤقت (2)" 
+                  aria-label="إضافة 15 ثانية">
+                  ${activeTeam.lifelines.extraTime ? '✓' : `
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 14 14"/>
+                      <path d="M12 2v2M22 12h-2"/>
+                    </svg>
+                  `}
+                </button>
+
+                <!-- Lifeline 3: استشارة صديق (20 ثانية) -->
+                <button 
+                  class="lifeline-btn ${activeTeam.lifelines.consultFriend ? 'used' : ''}" 
+                  onclick="startConsultFriend();" 
+                  ${activeTeam.lifelines.consultFriend || state.questionLifelineUsed || state.answerRevealed || state.isPaused ? 'disabled' : ''}
+                  title="استشارة صديق 20 ثانية (3)" 
+                  aria-label="استشارة صديق">
+                  ${activeTeam.lifelines.consultFriend ? '✓' : `
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                  `}
+                </button>
+
+                <span style="font-size:11px; color:var(--text-muted); margin-right:4px;">
+                  ${state.questionLifelineUsed ? 'وسيلة واحدة للسؤال' : 'وسائل المساعدة (1/2/3)'}
+                </span>
+              </div>
+
+              <!-- تخطي السؤال -->
+              <button class="btn-outline" style="padding:6px 14px; font-size:12px;" onclick="useSkip();"
+                ${activeTeam.skips >= 2 || state.currentIndex + 1 >= state.questions.length ? 'disabled' : ''}
+                aria-label="تخطي السؤال">
+                ⏭️ تخطي (${2 - activeTeam.skips})
+              </button>
+            </div>
+          </div>
+
+          <!-- أزرار الحكم (صح / خطأ) -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px;">
+            <button class="btn-success font-display" onclick="judgeAnswer(true);" ${state.isProcessing ? 'disabled' : ''} aria-label="إجابة صحيحة">
+              ✓ إجابة صحيحة (${state.isCurrentQuestionBet ? '+2 رهان' : '+1'}) [Y]
+            </button>
+            <button class="btn-danger font-display" onclick="judgeAnswer(false);" ${state.isProcessing ? 'disabled' : ''} aria-label="إجابة خاطئة">
+              ✗ إجابة خاطئة (${state.isCurrentQuestionBet ? '-2 رهان' : '0'}) [N]
+            </button>
+          </div>
+        </div>
+      `;
+
+      updateTimerDisplay();
+    }
+
+    // شاشة قرار الرهان قبل ظهور السؤال
+    function renderBetDecisionScreen(q) {
+      const activeTeam = state.activeTeamIndex === 0 ? state.team1 : state.team2;
+
+      appEl.innerHTML = `
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px 0;">
+          <div class="glass-box accent-glow-lg" style="padding:36px; max-width:540px; width:100%; border-color:var(--accent-primary);">
+            <div style="display:inline-block; padding:4px 14px; border-radius:99px; background:rgba(255,255,255,0.08); border:1px solid var(--border-accent); font-size:12px; color:var(--accent-light); margin-bottom:16px;">
+              دور: ${activeTeam.name}
+            </div>
+
+            <h2 class="accent-gradient-text font-display" style="font-size:2.2rem; font-weight:900; margin-bottom:8px;">
+              جولة الرهان المضاعف
+            </h2>
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:24px;">
+              اختر ما إذا كنت ترغب في مضاعفة نقاط السؤال قبل رؤية نصه!
+            </p>
+
+            <div style="background:rgba(0,0,0,0.3); border:1px solid var(--border-accent); border-radius:16px; padding:18px; margin-bottom:28px;">
+              <span style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">تصنيف السؤال القادم:</span>
+              <span class="font-display" style="font-size:1.8rem; font-weight:800; color:#FFF;">${q.category}</span>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:8px;">
+                الرهانات المتبقية لك: <strong>${activeTeam.betsLeft} من 2</strong> · رصيدك الحالي: <strong>${activeTeam.score} نقاط</strong>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <button class="btn-accent font-display" onclick="confirmBetDecision(true);" aria-label="رهان مضاعف">
+                🎯 رهان ×2 (+2 للصح / -2 للخطأ) [B]
+              </button>
+              <button class="btn-outline" onclick="confirmBetDecision(false);" aria-label="لعب عادي">
+                لعب عادي (+1 للصح / 0 للخطأ)
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Modal: استشارة صديق (20 ثانية)
+    function showConsultModal() {
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.id = 'consultModal';
+      modal.innerHTML = `
+        <div class="modal-box" style="text-align:center; max-width:420px; border-color:var(--accent-primary);">
+          <div style="width:70px; height:70px; margin:0 auto 14px; border-radius:50%; background:rgba(255,255,255,0.08); border:2px solid var(--accent-primary); display:flex; align-items:center; justify-content:center; font-size:30px;">
+            📞
+          </div>
+          <h3 class="font-display" style="font-size:1.5rem; font-weight:800; color:#FFF; margin-bottom:6px;">استشارة صديق</h3>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:18px;">المؤقت الرئيسي متوقف. لديكم 20 ثانية للنقاش!</p>
+          
+          <div style="font-size:3rem; font-weight:900; font-family:'Reem Kufi', sans-serif; color:var(--accent-light); margin-bottom:24px;">
+            <span id="consultSecText">20</span> <span style="font-size:1rem; font-family:'Cairo';">ثانية</span>
+          </div>
+
+          <button class="btn-accent" style="width:100%; font-size:14px; padding:12px;" onclick="endConsultFriend();">
+            إنهاء الاستشارة ومواصلة السؤال
+          </button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    function updateTimerDisplay() {
+      const circle = document.getElementById('timerProgressCircle');
+      const text = document.getElementById('timerText');
+      const container = document.getElementById('timerContainer');
+      if (!circle || !text) return;
+
+      const rem = Math.max(0, state.timeRemaining);
+      const prog = rem / QUESTION_TIMER_SECONDS;
+      const circumference = 2 * Math.PI * 31; // ~194.78
+      circle.style.strokeDashoffset = circumference * (1 - Math.min(1, prog));
+
+      const ceilSec = Math.ceil(rem);
+      text.innerText = ceilSec;
+
+      const computed = getComputedStyle(document.documentElement);
+      const primaryColor = computed.getPropertyValue('--accent-primary').trim() || '#D4AF37';
+
+      if (rem > 10) {
+        circle.style.stroke = primaryColor;
+        text.style.color = 'var(--accent-light)';
+        container?.classList.remove('urgent-timer');
+      } else if (rem > 5) {
+        circle.style.stroke = '#F97316';
+        text.style.color = '#F97316';
+        container?.classList.remove('urgent-timer');
+      } else {
+        circle.style.stroke = '#EF4444';
+        text.style.color = '#EF4444';
+        if (rem > 0) container?.classList.add('urgent-timer');
+        else container?.classList.remove('urgent-timer');
+      }
+    }
+
+    // الحكم على السؤال
+    function judgeAnswer(isCorrect) {
+      if (state.isProcessing || state.isBettingPhase) return;
+      state.isProcessing = true;
+      stopTimer();
+
+      const active = state.activeTeamIndex === 0 ? state.team1 : state.team2;
+      state.streakAlert = null;
+
+      if (isCorrect) {
+        audio.playCorrect();
+        const earned = state.isCurrentQuestionBet ? BET_POINTS : 1;
+        active.score += earned;
+        active.correct += 1;
+
+        // Streak logic
+        active.streak += 1;
+        if (active.streak > active.longestStreak) {
+          active.longestStreak = active.streak;
+        }
+
+        // Streak Threshold Bonus (+1 bonus point at 3 streak)
+        if (active.streak >= STREAK_THRESHOLD) {
+          active.score += 1;
+          active.streak = 0;
+          state.streakAlert = `سلسلة ذهبية لـ ${active.name}! (+1 نقطة مكافأة)`;
+          audio.playStreakBonus();
+        }
+      } else {
+        audio.playWrong();
+        // If wrong on Bet: subtract points (never below 0)
+        if (state.isCurrentQuestionBet) {
+          active.score = Math.max(0, active.score - BET_POINTS);
+        }
+        // Loss resets streak
+        active.streak = 0;
+      }
+
+      setTimeout(() => {
+        // Check game over
+        if (state.team1.score >= TARGET_WIN_SCORE || state.team2.score >= TARGET_WIN_SCORE) {
+          if (state.team1.score === state.team2.score) {
+            state.isTieBreaker = true;
+          } else {
+            finishGame();
+            return;
+          }
+        }
+
+        const nextIdx = state.currentIndex + 1;
+        if (nextIdx >= state.questions.length) {
+          if (state.team1.score === state.team2.score) {
+            state.isTieBreaker = true;
+          } else {
+            finishGame();
+            return;
+          }
+        }
+
+        state.currentIndex = nextIdx;
+        state.activeTeamIndex = state.activeTeamIndex === 0 ? 1 : 0;
+        state.isProcessing = false;
+
+        // Prepare next turn with betting check
+        checkBeforeQuestionStart();
+      }, 650);
+    }
+
+    // Skip question (Refunds bet if skip used on bet question)
+    function useSkip() {
+      const active = state.activeTeamIndex === 0 ? state.team1 : state.team2;
+      if (active.skips >= 2 || state.currentIndex + 1 >= state.questions.length || state.answerRevealed) return;
+
+      audio.playClick();
+      active.skips += 1;
+
+      // If Bet was active, refund bet count without penalty!
+      if (state.isCurrentQuestionBet) {
+        active.betsLeft = Math.min(2, active.betsLeft + 1);
+        state.isCurrentQuestionBet = false;
+      }
+
+      // Skip does not reset streak and does not increment it
+      state.currentIndex += 1;
+      state.questionLifelineUsed = false;
+      state.firstLetterClue = '';
+      state.answerRevealed = false;
+
+      renderPlay();
+      startTimer(QUESTION_TIMER_SECONDS);
+    }
+
+    function togglePauseGame() {
+      audio.playClick();
+      if (state.isPaused) {
+        resumeTimer();
+        renderPlay();
+      } else {
+        pauseTimer();
+        showPauseModal();
+      }
+    }
+
+    function finishGame() {
+      stopTimer();
+      audio.playVictory();
+      state.screen = 'VICTORY';
+      render();
+      runConfetti();
+    }
+
+    // --- شاشة النتيجة والتتويج ---
+    function renderVictory() {
+      let winner = null;
+      if (state.team1.score > state.team2.score) winner = state.team1;
+      else if (state.team2.score > state.team1.score) winner = state.team2;
+
+      appEl.innerHTML = `
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px 0;">
+          <div class="glass-box accent-glow-lg" style="padding:36px; max-width:620px; width:100%; border-color:var(--accent-primary);">
+            <div style="width:80px; height:80px; margin:0 auto 16px; border-radius:50%; background:rgba(255,255,255,0.08); border:1px solid var(--accent-primary); display:flex; align-items:center; justify-content:center; font-size:36px;">
+              🏆
+            </div>
+            <span style="font-size:13px; font-weight:700; color:var(--accent-light); letter-spacing:2px; display:block; margin-bottom:8px;">
+              بطل تحدي الثلاثين
+            </span>
+            <h2 class="accent-gradient-text font-display" style="font-size:clamp(2rem, 5vw, 3rem); font-weight:900; margin-bottom:24px;">
+              ${winner ? `مبارك لـ ${winner.name}!` : 'تعادل بطولي بين الفريقين!'}
+            </h2>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:28px;">
+              <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:16px;">
+                <span style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:4px;">${state.team1.name}</span>
+                <span class="font-display" style="font-size:3rem; font-weight:900; color:#FFF;">${state.team1.score}</span>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:8px; line-height:1.6;">
+                  الإجابات الصحيحة: <strong>${state.team1.correct}</strong><br>
+                  أطول سلسلة متتالية: <strong>${state.team1.longestStreak} 🔥</strong><br>
+                  تخطي: ${state.team1.skips} · رهانات مستخدمة: ${2 - state.team1.betsLeft}
+                </div>
+              </div>
+
+              <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:16px;">
+                <span style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:4px;">${state.team2.name}</span>
+                <span class="font-display" style="font-size:3rem; font-weight:900; color:#FFF;">${state.team2.score}</span>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:8px; line-height:1.6;">
+                  الإجابات الصحيحة: <strong>${state.team2.correct}</strong><br>
+                  أطول سلسلة متتالية: <strong>${state.team2.longestStreak} 🔥</strong><br>
+                  تخطي: ${state.team2.skips} · رهانات مستخدمة: ${2 - state.team2.betsLeft}
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <button class="btn-accent font-display" onclick="audio.playClick(); startNewGame();">
+                إعادة اللعب بنفس الإعدادات
+              </button>
+              <button class="btn-outline" onclick="audio.playClick(); state.screen='SPLASH'; render();">
+                القائمة الرئيسية
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function showRulesModal() {
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal-box">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border-accent); padding-bottom:10px;">
+            <h3 class="font-display" style="font-size:1.3rem; font-weight:700; color:#FFF;">قواعد تحدي الثلاثين المطوّرة</h3>
+            <span style="font-size:20px; cursor:pointer;" onclick="this.closest('.modal-overlay').remove();">✕</span>
+          </div>
+          <div style="font-size:13px; line-height:1.8; color:#CBD5E1; max-height:60vh; overflow-y:auto; padding-right:4px;">
+            <p><strong>1) المنافسة والفوز:</strong> فريقان يتناوبان على الأسئلة. أول من يحقق 30 نقطة يفوز فوراً.</p>
+            <p><strong>2) وسائل المساعدة الثلاث:</strong> لكل فريق 3 وسائل (كل واحدة مرة واحدة فقط باللعبة):<br>
+              • <strong>كشف الحرف الأول (1):</strong> يظهر الحرف الأول وعدد الحروف.<br>
+              • <strong>وقت إضافي (2):</strong> يضيف 15 ثانية للمؤقت (بحد أقصى 45 ثانية).<br>
+              • <strong>استشارة صديق (3):</strong> يوقف المؤقت ويمنح 20 ثانية للنقاش.<br>
+              <em>(يُسمح بوسيلة واحدة فقط في السؤال الواحد).</em>
+            </p>
+            <p><strong>3) سلسلة الإجابات (Streak):</strong> كل 3 إجابات متتالية تمنح الفريق نقطة إضافية (+1) وتتوهج شعلة الحماس.</p>
+            <p><strong>4) جولة الرهان:</strong> لكل فريق رهانان باللعبة. يظهر التصنيف قبل السؤال، إذا راهنت فالصح = +2 والخطأ = -2.</p>
+            <p><strong>5) اختصارات لوحة المفاتيح:</strong> مسافة = إظهار الإجابة، Y = صح، N = خطأ، P = إيقاف، B = رهان، 1/2/3 = الوسائل.</p>
+          </div>
+          <div style="margin-top:20px; text-align:left;">
+            <button class="btn-accent" style="padding:8px 20px; font-size:13px;" onclick="this.closest('.modal-overlay').remove();">
+              فهمت، لنبدأ!
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    function showPauseModal() {
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.id = 'pauseModal';
+      modal.innerHTML = `
+        <div class="modal-box" style="text-align:center; max-width:400px;">
+          <h3 class="font-display" style="font-size:1.5rem; font-weight:800; color:#FFF; margin-bottom:8px;">التحدي متوقف مؤقتاً</h3>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:24px;">المؤقت متوقف حالياً. هل ترغب في المتابعة؟</p>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <button class="btn-accent" onclick="document.getElementById('pauseModal').remove(); resumeTimer(); renderPlay();">
+              استئناف اللعب
+            </button>
+            <button class="btn-outline" onclick="document.getElementById('pauseModal').remove(); stopTimer(); state.screen='SPLASH'; render();">
+              الخروج للقائمة الرئيسية
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    function confirmExitGame() {
+      pauseTimer();
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.id = 'exitModal';
+      modal.innerHTML = `
+        <div class="modal-box" style="text-align:center; max-width:400px;">
+          <h3 class="font-display" style="font-size:1.4rem; font-weight:800; color:#EF4444; margin-bottom:8px;">إنهاء التحدي الحالي؟</h3>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">سيتم إلغاء الجولة الحالية ولن يتم تتويج أي فريق.</p>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <button class="btn-outline" onclick="document.getElementById('exitModal').remove(); resumeTimer();">
+              إلغاء ومتابعة
+            </button>
+            <button class="btn-danger" style="padding:10px; font-size:13px;" onclick="document.getElementById('exitModal').remove(); stopTimer(); state.screen='SPLASH'; render();">
+              نعم، إنهاء
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    // ==========================================
+    // 8) اختصارات لوحة المفاتيح
+    // ==========================================
+    window.addEventListener('keydown', (e) => {
+      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+
+      // Betting phase shortcuts
+      if (state.screen === 'PLAY' && state.isBettingPhase) {
+        if (e.key === 'b' || e.key === 'B' || e.key === 'لا') {
+          e.preventDefault();
+          confirmBetDecision(true);
+        } else if (e.code === 'Enter' || e.code === 'Space') {
+          e.preventDefault();
+          confirmBetDecision(false);
+        }
+        return;
+      }
+
+      if (state.screen !== 'PLAY') return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        state.answerRevealed = !state.answerRevealed;
+        audio.playClick();
+        renderPlay();
+      } else if (e.key === 'y' || e.key === 'Y' || e.key === 'غ') {
+        e.preventDefault();
+        judgeAnswer(true);
+      } else if (e.key === 'n' || e.key === 'N' || e.key === 'ى') {
+        e.preventDefault();
+        judgeAnswer(false);
+      } else if (e.key === 'p' || e.key === 'P' || e.key === 'ح') {
+        e.preventDefault();
+        togglePauseGame();
+      } else if (e.key === '1') {
+        e.preventDefault();
+        revealFirstLetter();
+      } else if (e.key === '2') {
+        e.preventDefault();
+        addExtraTime();
+      } else if (e.key === '3') {
+        e.preventDefault();
+        startConsultFriend();
+      }
+    });
+
+    // ==========================================
+    // 9) PWA Integration & Install Handling
+    // ==========================================
+    let deferredInstallPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      renderPwaInstallButton();
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      renderPwaInstallButton();
+    });
+
+    function renderPwaInstallButton() {
+      const container = document.getElementById('pwaInstallContainer');
+      const iosHint = document.getElementById('iosInstallHint');
+      if (!container) return;
+
+      // Check if running in standalone
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      if (isStandalone) {
+        container.innerHTML = '';
+        return;
+      }
+
+      // Check iOS
+      const isIOS = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+      if (isIOS && iosHint && state.screen === 'SPLASH') {
+        iosHint.style.display = 'block';
+      }
+
+      if (deferredInstallPrompt && state.screen === 'SPLASH') {
+        container.innerHTML = `
+          <button class="btn-accent" style="padding:6px 14px; font-size:12px; display:inline-flex; align-items:center; gap:6px;" onclick="triggerPwaInstall();" aria-label="تثبيت اللعبة">
+            📲 تثبيت اللعبة
+          </button>
+        `;
+      } else {
+        container.innerHTML = '';
+      }
+    }
+
+    async function triggerPwaInstall() {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      const choice = await deferredInstallPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        deferredInstallPrompt = null;
+        renderPwaInstallButton();
+      }
+    }
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        try {
+          navigator.serviceWorker.register('./sw.js')
+            .then(() => {
+              const badge = document.getElementById('pwaOfflineBadge');
+              if (badge) badge.style.display = 'inline-block';
+            })
+            .catch(() => {});
+        } catch(e) {}
+      });
+    }
+
+    // بدء تشغيل الواجهة
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "id": "tahadi-al-thalatheen-pwa",
+  "name": "تحدي الثلاثين",
+  "short_name": "تحدي 30",
+  "description": "لعبة المسابقات الثقافية والمعلومات العامة للفريقين بنظام الثلاثين نقطة والمؤقت التفاعلي الفاخر",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#07070B",
+  "theme_color": "#D4AF37",
+  "categories": ["games", "trivia", "entertainment", "education"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
