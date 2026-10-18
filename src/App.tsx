@@ -16,6 +16,34 @@ import {
 import { sounds } from './utils/audio';
 import { triggerConfetti } from './utils/confetti';
 import { IntroStageBackground } from './components/IntroStageBackground';
+import { 
+  normalizeArabicText, 
+  getQuestionFingerprint, 
+  getQuestionNormalizedAnswer 
+} from './utils/audit';
+
+// فحص التحميل: التحقق من تفرد المعرفات والبصمات النصية مع تجاهل المكرر مع console.warn
+export const VALIDATED_BANK: Question[] = (() => {
+  const seenIds = new Set<string>();
+  const seenFps = new Set<string>();
+  const list: Question[] = [];
+
+  for (const q of QUESTIONS_BANK) {
+    if (seenIds.has(q.id)) {
+      console.warn(`[تحدي الثلاثين - التحميل] تم تجاهل سؤال بمعرف مكرر: ${q.id}`);
+      continue;
+    }
+    const fp = getQuestionFingerprint(q);
+    if (fp && seenFps.has(fp)) {
+      console.warn(`[تحدي الثلاثين - التحميل] تم تجاهل سؤال ببصمة نصية مكررة: ${q.id}`);
+      continue;
+    }
+    seenIds.add(q.id);
+    if (fp) seenFps.add(fp);
+    list.push(q);
+  }
+  return list;
+})();
 
 // ============================================================================
 // ضبط رابط المشاركة العام للعبة (SHARE_URL):
@@ -312,7 +340,7 @@ export default function App() {
   }, [isThemePopoverOpen]);
 
   // ============================================================================
-  // التعديل 2: سجل الأسئلة المستعرضة وتجنب التكرار عبر الألعاب
+  // التعديل 2: سجل الأسئلة المستعرضة وتجنب التكرار عبر الألعاب (معرفات + بصمات نصية)
   // ============================================================================
   const [seenQuestionIds, setSeenQuestionIds] = useState<string[]>(() => {
     try {
@@ -325,11 +353,26 @@ export default function App() {
     return [];
   });
 
+  const [seenFingerprints, setSeenFingerprints] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('tahadi_seen_fingerprints');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {}
+    return [];
+  });
+
+  const [isDepletedModalOpen, setIsDepletedModalOpen] = useState<boolean>(false);
+
   const resetSeenQuestions = () => {
     sounds.playClick();
     setSeenQuestionIds([]);
+    setSeenFingerprints([]);
     try {
       localStorage.removeItem('tahadi_seen_questions');
+      localStorage.removeItem('tahadi_seen_fingerprints');
     } catch (e) {}
     addToast('تم التصفير', 'تم تصفير سجل الأسئلة بنجاح. ستظهر جميع الأسئلة مجدداً!', 'gold');
   };
@@ -622,7 +665,8 @@ export default function App() {
   useEffect(() => {
     if (!currentQuestion) return;
 
-    // Track question as seen in history
+    // Track question as seen in history (ID + content fingerprint)
+    const fp = getQuestionFingerprint(currentQuestion);
     setSeenQuestionIds(prev => {
       if (prev.includes(currentQuestion.id)) return prev;
       const next = [...prev, currentQuestion.id];
@@ -631,6 +675,17 @@ export default function App() {
       } catch (e) {}
       return next;
     });
+
+    if (fp) {
+      setSeenFingerprints(prev => {
+        if (prev.includes(fp)) return prev;
+        const next = [...prev, fp];
+        try {
+          localStorage.setItem('tahadi_seen_fingerprints', JSON.stringify(next));
+        } catch (e) {}
+        return next;
+      });
+    }
 
     setSelectedChoiceIdx(null);
     setSelectedTfChoice(null);
@@ -716,6 +771,94 @@ export default function App() {
     setSelectedCategories(shuffled.slice(0, 5));
   };
 
+  // دالة بناء تسلسل الأسئلة بذكاء داخل اللعبة الواحدة:
+  // 1) منع تكرار الإجابات المطبّعة
+  // 2) منع توالي أكثر من سؤالين من نفس التصنيف أو نفس النمط عند توفر بدائل
+  const buildSmartGameQuestions = useCallback((candidatePool: Question[], minNeeded: number): Question[] => {
+    // 1. فرز الأسئلة لاستبعاد تكرار الإجابة المطبّعة داخل اللعبة
+    const seenAnswers = new Set<string>();
+    const uniqueAnsPool: Question[] = [];
+
+    for (const q of shuffleArray(candidatePool)) {
+      if (q.type !== 'tf' && q.type !== 'match') {
+        const normAns = getQuestionNormalizedAnswer(q);
+        if (normAns && seenAnswers.has(normAns)) {
+          continue;
+        }
+        if (normAns) seenAnswers.add(normAns);
+      }
+      uniqueAnsPool.push(q);
+    }
+
+    // 2. ترتيب الأسئلة بحيث لا يتكرر تصنيف أو نمط أكثر من مرتين متتاليتين
+    const sequence: Question[] = [];
+    const pool = [...uniqueAnsPool];
+
+    while (pool.length > 0 && sequence.length < minNeeded) {
+      const len = sequence.length;
+      const prev1 = len >= 1 ? sequence[len - 1] : null;
+      const prev2 = len >= 2 ? sequence[len - 2] : null;
+
+      // البحث عن سؤال لا يكرر التصنيف ولا النمط 3 مرات متتالية
+      let idx = pool.findIndex(cand => {
+        const catStreak = prev1 && prev2 && prev1.category === cand.category && prev2.category === cand.category;
+        const typeStreak = prev1 && prev2 && prev1.type === cand.type && prev2.type === cand.type;
+        return !catStreak && !typeStreak;
+      });
+
+      // إذا تعذر، تجنب تكرار التصنيف على الأقل
+      if (idx === -1) {
+        idx = pool.findIndex(cand => {
+          const catStreak = prev1 && prev2 && prev1.category === cand.category && prev2.category === cand.category;
+          return !catStreak;
+        });
+      }
+
+      if (idx === -1) {
+        idx = 0;
+      }
+
+      sequence.push(pool[idx]);
+      pool.splice(idx, 1);
+    }
+
+    return sequence;
+  }, []);
+
+  // بدء دورة جديدة عند نفاد الأسئلة غير المعروضة
+  const handleStartNewCycle = () => {
+    setIsDepletedModalOpen(false);
+    sounds.playClick();
+    setSeenQuestionIds([]);
+    setSeenFingerprints([]);
+    try {
+      localStorage.removeItem('tahadi_seen_questions');
+      localStorage.removeItem('tahadi_seen_fingerprints');
+    } catch (e) {}
+    addToast('دورة جديدة 🔄', 'تم تصفير سجل الأسئلة بنجاح وبدء دورة جديدة!', 'gold');
+
+    // تشغيل اللعبة فوراً باستخدام البنك الكامل
+    setTimeout(() => {
+      let filtered = VALIDATED_BANK.filter(q => {
+        const catMatch = selectedCategories.includes(q.category);
+        const diffMatch = selectedDifficulty === 'all' || q.difficulty === selectedDifficulty;
+        const modeMatch = enabledModes.includes(q.type);
+        return catMatch && diffMatch && modeMatch;
+      });
+      if (filtered.length === 0) {
+        filtered = VALIDATED_BANK.filter(q => enabledModes.includes(q.type));
+      }
+      const count = getPlayerCount(gameMode);
+      const minNeeded = count * 25 + 20;
+      const newGameQuestions = buildSmartGameQuestions(filtered, minNeeded);
+      setGameQuestions(newGameQuestions);
+      setCurrentQuestionIndex(0);
+      setCurrentPlayerIndex(0);
+      setCurrentScreen('PLAY');
+      setWagerModalOpen(true);
+    }, 150);
+  };
+
   // Start Game with Question Anti-Repetition Selection
   const initiateStartGame = () => {
     if (selectedCategories.length < 3 || enabledModes.length === 0) return;
@@ -770,8 +913,8 @@ export default function App() {
     setGameStartTime(Date.now());
     setIsNewSoloRecord(false);
 
-    // Filter questions
-    let filtered = QUESTIONS_BANK.filter(q => {
+    // 1. تصفية الأسئلة حسب التصنيفات والصعوبة والأنماط من VALIDATED_BANK
+    let filtered = VALIDATED_BANK.filter(q => {
       const catMatch = selectedCategories.includes(q.category);
       const diffMatch = selectedDifficulty === 'all' || q.difficulty === selectedDifficulty;
       const modeMatch = enabledModes.includes(q.type);
@@ -779,30 +922,31 @@ export default function App() {
     });
 
     if (filtered.length === 0) {
-      filtered = QUESTIONS_BANK.filter(q => enabledModes.includes(q.type));
+      filtered = VALIDATED_BANK.filter(q => enabledModes.includes(q.type));
     }
 
-    // Anti-Repetition: Prefer Unseen Questions
-    const unseen = filtered.filter(q => !seenQuestionIds.includes(q.id));
-    let questionPool: Question[] = [];
+    // 2. منع التكرار: استبعاد كل سؤال موجود بمعرفه ID أو ببصمته النصية
+    const unseen = filtered.filter(q => {
+      if (seenQuestionIds.includes(q.id)) return false;
+      const fp = getQuestionFingerprint(q);
+      if (fp && seenFingerprints.includes(fp)) return false;
+      return true;
+    });
+
+    // 3. عند نفاد الأسئلة غير المعروضة: عدم تكرار القديم تلقائياً بل إظهار نافذة الدورة الجديدة
+    if (unseen.length === 0) {
+      setIsDepletedModalOpen(true);
+      return;
+    }
 
     const minNeeded = count * 25 + 20;
 
-    if (unseen.length >= minNeeded) {
-      questionPool = shuffleArray(unseen);
-    } else if (unseen.length > 0) {
-      // Use all unseen first, then supplement with previously seen questions
-      const seenFiltered = filtered.filter(q => seenQuestionIds.includes(q.id));
-      questionPool = [...shuffleArray(unseen), ...shuffleArray(seenFiltered)];
-    } else {
-      // Entire bank seen: Reset history for this bank and start fresh cycle!
-      questionPool = shuffleArray(filtered);
-      addToast('تدوير بنك الأسئلة', 'تم استعراض كافة أسئلة هذه الفئة، بدأت دورة جديدة!', 'gold');
-    }
+    // 4. بناء تسلسل أسئلة اللعبة بذكاء (منع تكرار الإجابات المطبّعة + تتابع الأنماط والتصنيفات)
+    const finalGameQuestions = buildSmartGameQuestions(unseen, minNeeded);
 
-    let finalGameQuestions = [...questionPool];
-    while (finalGameQuestions.length < minNeeded) {
-      finalGameQuestions = [...finalGameQuestions, ...shuffleArray(filtered)];
+    if (finalGameQuestions.length === 0) {
+      setIsDepletedModalOpen(true);
+      return;
     }
 
     setGameQuestions(finalGameQuestions);
@@ -885,6 +1029,22 @@ export default function App() {
         setTiedPlayerIndices(leaders.map(l => l.idx));
         setTieBreakerTurnIndex(0);
         addToast('جولة فاصلة ⚡', `تعادل في الصدارة! جولة الموت المفاجئ بين ${leaders.length} لاعبين`, 'streak');
+
+        // الجولة الفاصلة تسحب أيضاً حصرياً من غير المعروض
+        const inGameIds = new Set(gameQuestions.map(q => q.id));
+        const inGameAns = new Set(gameQuestions.map(q => getQuestionNormalizedAnswer(q)));
+        const freshUnseen = VALIDATED_BANK.filter(q => {
+          if (seenQuestionIds.includes(q.id) || inGameIds.has(q.id)) return false;
+          const fp = getQuestionFingerprint(q);
+          if (fp && seenFingerprints.includes(fp)) return false;
+          const ans = getQuestionNormalizedAnswer(q);
+          if (ans && inGameAns.has(ans)) return false;
+          return true;
+        });
+        if (freshUnseen.length > 0) {
+          const extra = buildSmartGameQuestions(freshUnseen, 20);
+          setGameQuestions(prev => [...prev, ...extra]);
+        }
         return false;
       }
     }
@@ -1608,12 +1768,12 @@ export default function App() {
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-[var(--text-main)]">سجل الأسئلة وتجنب التكرار:</span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--player-1-bg)] text-[var(--accent-light)] border border-[var(--border-accent)]">
-                      {QUESTIONS_BANK.length} سؤالاً موثقاً
+                      {VALIDATED_BANK.length} سؤالاً موثقاً
                     </span>
                   </div>
                   <div className="text-[11px] text-[var(--text-muted)] mt-0.5">
-                    تم استعراض <strong>{seenQuestionIds.length}</strong> من إجمالي <strong>{QUESTIONS_BANK.length}</strong> سؤالاً على هذا المتصفح ({Math.round((seenQuestionIds.length / QUESTIONS_BANK.length) * 100)}%).
-                    {seenQuestionIds.length > 0 && ' يتم اختيار الأسئلة غير المستعرضة أولاً.'}
+                    تم استعراض <strong>{seenQuestionIds.length}</strong> من إجمالي <strong>{VALIDATED_BANK.length}</strong> سؤالاً على هذا المتصفح ({Math.round((seenQuestionIds.length / VALIDATED_BANK.length) * 100)}%).
+                    {seenQuestionIds.length > 0 && ' يتم استبعاد المعروض وضمان عدم تكرار الأسئلة أو الإجابات.'}
                   </div>
                 </div>
               </div>
@@ -2953,6 +3113,43 @@ export default function App() {
             >
               فهمت القواعد، فلنبدأ!
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* BANK DEPLETED MODAL (بدء دورة جديدة / إنهاء اللعبة) */}
+      {isDepletedModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-card max-w-md w-full p-6 md:p-8 rounded-3xl text-center border-[var(--border-accent)] animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/40">
+              <RefreshCw className="w-8 h-8 text-[var(--accent-light)]" />
+            </div>
+            <h3 className="text-2xl font-bold font-display text-[var(--text-main)] mb-2">
+              نفدت الأسئلة غير المعروضة!
+            </h3>
+            <p className="text-sm text-[var(--text-secondary)] mb-6 leading-relaxed">
+              لقد استعرضت كافة الأسئلة المتوفرة في الفئات والأنماط المحددة ({seenQuestionIds.length} سؤالاً).
+              يمكنك بدء دورة جديدة لتصفير السجل وإعادة خلط الأسئلة بالكامل، أو إنهاء اللعبة.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handleStartNewCycle}
+                className="flex-1 py-3.5 px-6 rounded-2xl btn-accent font-bold text-sm cursor-pointer flex items-center justify-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>ابدأ دورة جديدة</span>
+              </button>
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  setIsDepletedModalOpen(false);
+                  setCurrentScreen('SETUP');
+                }}
+                className="py-3.5 px-6 rounded-2xl glass-panel text-[var(--text-secondary)] hover:text-[var(--text-main)] font-bold text-sm cursor-pointer transition-all"
+              >
+                إنهاء اللعبة
+              </button>
+            </div>
           </div>
         </div>
       )}
